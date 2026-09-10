@@ -1,7 +1,11 @@
 {
-  "name": "nayva-tech-solutions",
+  "name": "meetprep-crm",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "MeetPrep CRM — AI-Powered Meeting Preparation Portal by Navya Tech Solutions",
+  "author": "Navya Tech Solutions <contact@navyatech.co.in>",
+  "homepage": "https://www.navyatech.co.in/",
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "vite",

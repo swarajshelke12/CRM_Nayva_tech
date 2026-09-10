@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Screen, Meeting, WorkflowCredentials, WorkflowStatus } from '../types';
 import { initialMeetings, initialCredentials, mockWorkflowStatus } from '../data/mockData';
 
-export const LOCK_DURATION_MS = 30 * 1000; // ⚠️ TESTING: 30 seconds (change to 24 * 60 * 60 * 1000 for production)
+export const LOCK_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 function sanitizeCredentialsIfExpired(creds: WorkflowCredentials): WorkflowCredentials {
   if (creds.expiresAtTimestamp && Date.now() >= creds.expiresAtTimestamp) {

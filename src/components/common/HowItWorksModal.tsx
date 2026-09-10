@@ -247,9 +247,9 @@ export const HowItWorksModal: React.FC = () => {
                   <div className="flex items-start gap-3 p-3 rounded-lg bg-zinc-900 border border-zinc-800">
                     <span className="w-6 h-6 rounded-full bg-zinc-800 text-zinc-200 font-semibold text-xs flex items-center justify-center flex-shrink-0">2</span>
                     <div>
-                      <p className="font-semibold text-zinc-200">Paste Your 4 Integration Keys</p>
+                      <p className="font-semibold text-zinc-200">Paste Your Integration Keys</p>
                       <p className="text-[11px] text-zinc-400 mt-0.5">
-                        Google Client ID & Secret, OpenAI Key, Apify Key, and WhatsApp Access Token. (Clear step-by-step instructions are provided for each key).
+                        Google Client ID &amp; Secret, OpenAI Key, Apify Key, LinkedIn Cookie, and WhatsApp Access Token. (Clear step-by-step instructions are provided for each key).
                       </p>
                     </div>
                   </div>

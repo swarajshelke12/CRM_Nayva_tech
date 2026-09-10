@@ -47,6 +47,9 @@ export interface WorkflowCredentials {
   // ── Apify ──────────────────────────────────────────────────────────────────
   apifyApiKey: string;
 
+  // ── LinkedIn Session Cookie ────────────────────────────────────────────────
+  linkedInCookie?: string;      // li_at session cookie from browser DevTools for Apify scraper
+
   // ── WhatsApp Business Cloud ────────────────────────────────────────────────
   whatsAppBusinessId: string;   // Meta Business Account ID
   whatsAppAccessToken: string;  // Permanent / long-lived access token from Meta

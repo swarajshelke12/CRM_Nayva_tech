@@ -25,6 +25,7 @@ import {
   Unlock,
   Info,
 } from 'lucide-react';
+import { LinkedInIcon } from '../common/Icons';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -82,6 +83,11 @@ const CREDENTIAL_VALIDATIONS: Record<string, ValidationRule> = {
     maxLength: 60,
     prefix: 'apify_api_',
     formatExample: 'apify_api_xxxxxxxxxxxxxxxxxxxxxxxxx',
+  },
+  linkedInCookie: {
+    minLength: 40,
+    maxLength: 350,
+    formatExample: 'li_at=AQEDATxxxxxxxxxxxxxxxxxxxxxxxx',
   },
   whatsAppBusinessId: {
     minLength: 13,
@@ -398,6 +404,7 @@ export const ConnectionsView: React.FC = () => {
   const [googleClientSecret, setGoogleClientSecret] = useState(credentials.googleClientSecret);
   const [openAiApiKey, setOpenAiApiKey] = useState(credentials.openAiApiKey);
   const [apifyApiKey, setApifyApiKey] = useState(credentials.apifyApiKey);
+  const [linkedInCookie, setLinkedInCookie] = useState(credentials.linkedInCookie || '');
   const [whatsAppBusinessId, setWhatsAppBusinessId] = useState(credentials.whatsAppBusinessId);
   const [whatsAppAccessToken, setWhatsAppAccessToken] = useState(credentials.whatsAppAccessToken);
 
@@ -415,6 +422,7 @@ export const ConnectionsView: React.FC = () => {
     setGoogleClientSecret(credentials.googleClientSecret);
     setOpenAiApiKey(credentials.openAiApiKey);
     setApifyApiKey(credentials.apifyApiKey);
+    setLinkedInCookie(credentials.linkedInCookie || '');
     setWhatsAppBusinessId(credentials.whatsAppBusinessId);
     setWhatsAppAccessToken(credentials.whatsAppAccessToken);
     // When credentials are reset, unlock state should also reset
@@ -447,6 +455,7 @@ export const ConnectionsView: React.FC = () => {
   const googleDone = !isBlank(googleClientId) && !isBlank(googleClientSecret);
   const openAiDone = !isBlank(openAiApiKey);
   const apifyDone  = !isBlank(apifyApiKey);
+  const linkedInDone = !isBlank(linkedInCookie);
   const whatsAppDone = !isBlank(whatsAppBusinessId) && !isBlank(whatsAppAccessToken);
 
   const handleSubmit = () => {
@@ -455,6 +464,7 @@ export const ConnectionsView: React.FC = () => {
       googleClientSecret,
       openAiApiKey,
       apifyApiKey,
+      linkedInCookie,
       whatsAppBusinessId,
       whatsAppAccessToken,
     });
@@ -470,6 +480,7 @@ export const ConnectionsView: React.FC = () => {
     if (dummy.googleClientSecret) setGoogleClientSecret(dummy.googleClientSecret);
     if (dummy.openAiApiKey) setOpenAiApiKey(dummy.openAiApiKey);
     if (dummy.apifyApiKey) setApifyApiKey(dummy.apifyApiKey);
+    if (dummy.linkedInCookie) setLinkedInCookie(dummy.linkedInCookie);
     if (dummy.whatsAppBusinessId) setWhatsAppBusinessId(dummy.whatsAppBusinessId);
     if (dummy.whatsAppAccessToken) setWhatsAppAccessToken(dummy.whatsAppAccessToken);
   };
@@ -555,7 +566,7 @@ export const ConnectionsView: React.FC = () => {
               <li>After submitting, your credentials are <strong className="text-amber-100">immediately hidden</strong> from this page — just like OpenAI or Google API dashboards.</li>
               <li>You can use the <strong className="text-amber-100">"Unlock &amp; View"</strong> button to reveal credentials <strong className="text-amber-100">only within the 24-hour window</strong>.</li>
               <li>After 24 hours, all credentials are <strong className="text-amber-100">permanently purged from browser memory</strong>. They cannot be recovered.</li>
-              <li>If your current credentials are lost after the 24-hour window, you will need to <strong className="text-amber-100">generate new credentials</strong> from each provider (Google, OpenAI, Apify, Meta) and re-submit them.</li>
+              <li>If your current credentials are lost after the 24-hour window, you will need to <strong className="text-amber-100">generate new credentials</strong> from each provider (Google, OpenAI, Apify, LinkedIn, Meta) and re-submit them.</li>
               <li>The Navya Tech team must retrieve and save your keys to the n8n workflow <strong className="text-amber-100">within the 24-hour window</strong>.</li>
             </ul>
           </div>
@@ -758,7 +769,29 @@ export const ConnectionsView: React.FC = () => {
         />
       </GroupCard>
 
-      {/* 4. WhatsApp Business Cloud */}
+      {/* 4. LinkedIn Session Cookie */}
+      <GroupCard
+        icon={<LinkedInIcon className="w-4 h-4 text-[#0A66C2]" />}
+        title="LinkedIn Session Cookie"
+        description="Browser session cookie that authenticates attendee profile scraping"
+        workflowNodes="Set LinkedIn Cookie · Apify Web Scraper"
+        isConfigured={isSubmitted && linkedInDone}
+      >
+        <CredentialField
+          label="LinkedIn li_at Cookie"
+          sublabel="Session cookie from your browser DevTools"
+          value={linkedInCookie}
+          onChange={setLinkedInCookie}
+          fieldKey="linkedInCookie"
+          placeholder="li_at=AQEDATxxxxxxxxxxxxxxxxxxxxxxxx"
+          hint='To get this: log into LinkedIn → open browser DevTools (F12) → Application tab → Cookies (https://www.linkedin.com) → copy the value of the "li_at" cookie. Paste the full string including "li_at=" prefix.'
+          warning="LinkedIn Security Recommendation: For production use, consider using a dedicated secondary LinkedIn account rather than your primary personal profile."
+          disabled={isLocked}
+          hidden={fieldsHidden}
+        />
+      </GroupCard>
+
+      {/* 5. WhatsApp Business Cloud */}
       <GroupCard
         icon={<MessageSquare className="w-4 h-4" />}
         title="WhatsApp Business Cloud"

@@ -13,6 +13,7 @@ out/
 # Environment variables & secrets (CRITICAL: NEVER commit .env files)
 .env
 .env.*
+!.env.example
 *.env
 .env.local
 .env.development.local

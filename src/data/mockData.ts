@@ -19,6 +19,9 @@ export const initialCredentials: WorkflowCredentials = {
   // Apify
   apifyApiKey: '',
 
+  // LinkedIn
+  linkedInCookie: '',
+
   // WhatsApp
   whatsAppBusinessId: '',
   whatsAppAccessToken: '',

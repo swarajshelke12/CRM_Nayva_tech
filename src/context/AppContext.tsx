@@ -11,6 +11,7 @@ function sanitizeCredentialsIfExpired(creds: WorkflowCredentials): WorkflowCrede
       googleClientSecret: '',
       openAiApiKey: '',
       apifyApiKey: '',
+      linkedInCookie: '',
       whatsAppBusinessId: '',
       whatsAppAccessToken: '',
       status: 'Locked & Expired',
@@ -123,6 +124,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       googleClientSecret: '',
       openAiApiKey: '',
       apifyApiKey: '',
+      linkedInCookie: '',
       whatsAppBusinessId: '',
       whatsAppAccessToken: '',
       status: 'Locked & Expired',
@@ -142,6 +144,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       googleClientSecret: '',
       openAiApiKey: '',
       apifyApiKey: '',
+      linkedInCookie: '',
       whatsAppBusinessId: '',
       whatsAppAccessToken: '',
       status: 'Not Configured',
@@ -158,6 +161,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       googleClientSecret: '',
       openAiApiKey: '',
       apifyApiKey: '',
+      linkedInCookie: '',
       whatsAppBusinessId: '',
       whatsAppAccessToken: '',
       status: 'Not Configured',
@@ -176,6 +180,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       googleClientSecret:  'GOCSPX-mK9pN2qR4sT6uV8wX0yB3dF5hJ7',                                       // 35 chars
       openAiApiKey:        'sk-proj-aB3cD5eF7gH9iJ1kL3mN5oP7qR9sT1uV3wX5yZ7aB9cD1eF',                   // 56 chars
       apifyApiKey:         'apify_api_kM9nP2qR4sT6uV8wX0yB3dF5hJ7lN9pQ',                                // 42 chars
+      linkedInCookie:      'li_at=AQEDATN3lBwD0zXPAAABl3pQvgAAAWR4FzCAAE4AZW1zN2tZcm54dWhzN1N2eHN1OGYybnRhMjM4aWp3OWFzZDhuYXZ5YXRlY2g0bWRxOHdlaWptMm5idXRoMjM4Zg==', // 160 chars
       whatsAppBusinessId:  '109876543210985',                                                             // 15 digits
       whatsAppAccessToken: 'EAAGm0PX4ZBsEBO3kZBwVjRqHtN2mFpL5sQdK8xW1nU7yC3vA9bD6eG0hI2jK4lM8nO0pQ2rS4tU6vW8xY0zA1bC3dE5fG7hI9jK1lM3nO5pQ7rS9tU1vW3xY5zA7bC9dE1fG3hI5jK7lM9nO1pQ3rS5tU7vW9xY1zA3bC5dE7f', // 183 chars
     };

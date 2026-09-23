@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚡ MeetPrep CRM (MeetingOS)
+#  MeetPrep CRM (MeetingOS)
 ### *AI-Powered Meeting Preparation & Executive Intelligence Portal*
 
 [![React 19](https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)

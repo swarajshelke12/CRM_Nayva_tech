@@ -6,12 +6,13 @@ import {
   Calendar, 
   Clock, 
   ArrowRight,
-  Settings
+  Settings,
+  RefreshCw
 } from 'lucide-react';
 import type { PreparationStatus } from '../../types';
 
 export const MeetingsView: React.FC = () => {
-  const { meetings, viewMeetingPrep, setCurrentScreen } = useApp();
+  const { meetings, viewMeetingPrep, setCurrentScreen, isSyncing, syncCalendar } = useApp();
   const [filter, setFilter] = useState<'All' | PreparationStatus>('All');
   const [search, setSearch] = useState('');
 
@@ -49,21 +50,33 @@ export const MeetingsView: React.FC = () => {
               />
             </div>
 
-            {/* Filter Tabs */}
-            <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-lg border border-zinc-800 text-xs">
-              {(['All', 'Prepared', 'In Progress', 'Scheduled'] as const).map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setFilter(tab)}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                    filter === tab
-                      ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
+            {/* Filter Tabs & Sync */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-lg border border-zinc-800 text-xs">
+                {(['All', 'Prepared', 'In Progress', 'Scheduled'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setFilter(tab)}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                      filter === tab
+                        ? 'bg-zinc-800 text-zinc-100 shadow-sm'
+                        : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={syncCalendar}
+                disabled={isSyncing}
+                className="px-3 py-2 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-zinc-300 text-xs font-medium border border-zinc-800 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                title="Refresh calendar sessions"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-zinc-400 ${isSyncing ? 'animate-spin text-emerald-400' : ''}`} />
+                <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync'}</span>
+              </button>
             </div>
           </div>
         </div>

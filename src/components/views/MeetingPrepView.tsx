@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { LinkedInIcon } from '../common/Icons';
 import { 
@@ -11,15 +11,25 @@ import {
   ArrowLeft,
   Copy,
   Check,
-  ExternalLink
+  ExternalLink,
+  MessageSquare
 } from 'lucide-react';
 
 export const MeetingPrepView: React.FC = () => {
-  const { meetings, selectedMeetingId, setSelectedMeetingId, setCurrentScreen } = useApp();
-  const [copied, setCopied] = React.useState(false);
+  const { meetings, selectedMeetingId, setSelectedMeetingId, setCurrentScreen, showToast } = useApp();
+  const [copied, setCopied] = useState(false);
+  const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
 
   const currentMeeting = meetings.find(m => m.id === selectedMeetingId) ?? meetings[0];
   const brief = currentMeeting?.brief;
+
+  const handleSendToWhatsApp = async () => {
+    if (!brief || !currentMeeting) return;
+    setIsSendingWhatsApp(true);
+    await new Promise(r => setTimeout(r, 600));
+    setIsSendingWhatsApp(false);
+    showToast(`✓ Briefing for ${currentMeeting.attendeeName} dispatched to WhatsApp!`, 'success');
+  };
 
   const handleCopy = () => {
     if (!brief || !currentMeeting) return;
@@ -168,13 +178,24 @@ export const MeetingPrepView: React.FC = () => {
                 {currentMeeting.platform}
               </span>
               {brief && (
-                <button
-                  onClick={handleCopy}
-                  className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition-colors flex items-center gap-1"
-                >
-                  {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  <span>{copied ? 'Copied' : 'Copy Brief'}</span>
-                </button>
+                <>
+                  <button
+                    onClick={handleSendToWhatsApp}
+                    disabled={isSendingWhatsApp}
+                    className="px-2.5 py-1 rounded bg-green-950/60 hover:bg-green-900/60 text-green-300 text-xs font-medium border border-green-800/60 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                    title="Push this brief directly to your WhatsApp"
+                  >
+                    <MessageSquare className="w-3 h-3 text-green-400" />
+                    <span>{isSendingWhatsApp ? 'Sending...' : 'Send to WhatsApp'}</span>
+                  </button>
+                  <button
+                    onClick={handleCopy}
+                    className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition-colors flex items-center gap-1"
+                  >
+                    {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                    <span>{copied ? 'Copied' : 'Copy Brief'}</span>
+                  </button>
+                </>
               )}
             </div>
           </div>

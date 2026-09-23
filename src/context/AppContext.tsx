@@ -1,8 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Screen, Meeting, WorkflowCredentials, WorkflowStatus } from '../types';
 import { initialMeetings, initialCredentials, mockWorkflowStatus } from '../data/mockData';
+import {
+  sendCredentialsToWebhook,
+  sendTestWhatsAppDispatch,
+  triggerMeetingSync,
+  type WebhookResponse
+} from '../services/webhookService';
 
-export const LOCK_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+export const LOCK_DURATION_MS = 12 * 60 * 60 * 1000; // 12 hours in milliseconds (Production setting)
 
 function sanitizeCredentialsIfExpired(creds: WorkflowCredentials): WorkflowCredentials {
   if (creds.expiresAtTimestamp && Date.now() >= creds.expiresAtTimestamp) {
@@ -23,6 +29,12 @@ function sanitizeCredentialsIfExpired(creds: WorkflowCredentials): WorkflowCrede
   return creds;
 }
 
+export interface ToastNotification {
+  id: string;
+  message: string;
+  type: 'success' | 'info' | 'error';
+}
+
 interface AppContextType {
   currentScreen: Screen;
   setCurrentScreen: (screen: Screen) => void;
@@ -30,16 +42,23 @@ interface AppContextType {
   setSelectedMeetingId: (id: string) => void;
   meetings: Meeting[];
   credentials: WorkflowCredentials;
-  updateCredentials: (updates: Partial<WorkflowCredentials>) => void;
+  updateCredentials: (updates: Partial<WorkflowCredentials>) => Promise<void>;
   simulateLockExpiry: () => void;
   resetForNewCredentials: () => void;
   deleteCredentials: () => void;
-  fillDummyCredentials: () => Partial<WorkflowCredentials>;
   viewMeetingPrep: (meetingId: string) => void;
   workflowStatus: WorkflowStatus;
   isGuideOpen: boolean;
   openGuide: () => void;
   closeGuide: () => void;
+  justCompletedSetup: boolean;
+  dismissCompletedSetupNotice: () => void;
+  isSyncing: boolean;
+  syncCalendar: () => Promise<void>;
+  testWhatsAppAlert: () => Promise<WebhookResponse>;
+  toast: ToastNotification | null;
+  showToast: (message: string, type?: 'success' | 'info' | 'error') => void;
+  dismissToast: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -47,14 +66,21 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentScreen, setCurrentScreen] = useState<Screen>('dashboard');
   const [selectedMeetingId, setSelectedMeetingId] = useState<string>('');
-  const [meetings] = useState<Meeting[]>(initialMeetings);
+  const [meetings, setMeetings] = useState<Meeting[]>(initialMeetings);
+  const [justCompletedSetup, setJustCompletedSetup] = useState<boolean>(false);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [toast, setToast] = useState<ToastNotification | null>(null);
 
-  // Initialize credentials from localStorage if available, applying auto-purge if >24h
+  // Initialize credentials from localStorage if available, applying auto-purge if >12h
   const [credentials, setCredentials] = useState<WorkflowCredentials>(() => {
     try {
       const saved = localStorage.getItem('meetprep_credentials');
       if (saved) {
         const parsed = JSON.parse(saved) as WorkflowCredentials;
+        if (parsed.googleClientId?.includes('847293610584')) {
+          localStorage.removeItem('meetprep_credentials');
+          return initialCredentials;
+        }
         return sanitizeCredentialsIfExpired(parsed);
       }
     } catch {
@@ -63,17 +89,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return initialCredentials;
   });
 
-  // Workflow status is read-only mock data — no live n8n connection yet
-  const [workflowStatus] = useState<WorkflowStatus>(mockWorkflowStatus);
+  const [workflowStatus, setWorkflowStatus] = useState<WorkflowStatus>(() => {
+    return {
+      ...mockWorkflowStatus,
+      isActive: credentials.status === 'Submitted' || credentials.status === 'Configured',
+    };
+  });
+
   const [isGuideOpen, setIsGuideOpen] = useState<boolean>(false);
 
   const openGuide = () => setIsGuideOpen(true);
   const closeGuide = () => setIsGuideOpen(false);
+  const dismissCompletedSetupNotice = () => setJustCompletedSetup(false);
 
-  // Periodic security check to automatically trigger 24h lock & purge
+  const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
+    const id = Date.now().toString();
+    setToast({ id, message, type });
+    setTimeout(() => {
+      setToast((prev) => (prev?.id === id ? null : prev));
+    }, 4000);
+  };
+
+  const dismissToast = () => setToast(null);
+
+  // Periodic security check to automatically trigger 12h lock & purge
   useEffect(() => {
     const timer = setInterval(() => {
-      setCredentials(prev => {
+      setCredentials((prev) => {
         if (
           prev.expiresAtTimestamp &&
           Date.now() >= prev.expiresAtTimestamp &&
@@ -92,14 +134,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => clearInterval(timer);
   }, []);
 
-  const updateCredentials = (updates: Partial<WorkflowCredentials>) => {
+  const updateCredentials = async (updates: Partial<WorkflowCredentials>) => {
     const now = Date.now();
     const expiresAt = now + LOCK_DURATION_MS;
     const formattedTime = new Date(now).toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
 
     const newCreds: WorkflowCredentials = {
@@ -108,13 +150,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: 'Submitted',
       submittedAtTimestamp: now,
       expiresAtTimestamp: expiresAt,
-      lastSubmitted: `${formattedTime} (Auto-locks in 24h)`
+      lastSubmitted: `${formattedTime} (Auto-locks in 12h)`,
     };
 
     setCredentials(newCreds);
+    setWorkflowStatus((prev) => ({
+      ...prev,
+      isActive: true,
+      lastRunAt: 'Just now',
+      nextRunAt: 'In 60 minutes',
+    }));
+    setJustCompletedSetup(true);
+
     try {
       localStorage.setItem('meetprep_credentials', JSON.stringify(newCreds));
     } catch {}
+
+    // Asynchronously dispatch to production n8n webhook if endpoint configured
+    await sendCredentialsToWebhook(newCreds);
+  };
+
+  const syncCalendar = async () => {
+    setIsSyncing(true);
+    const result = await triggerMeetingSync();
+    setIsSyncing(false);
+    setWorkflowStatus((prev) => ({
+      ...prev,
+      lastRunAt: 'Just now',
+    }));
+    showToast(result.message, result.success ? 'success' : 'info');
+  };
+
+  const testWhatsAppAlert = async (): Promise<WebhookResponse> => {
+    const res = await sendTestWhatsAppDispatch(
+      credentials.whatsAppBusinessId,
+      credentials.whatsAppAccessToken
+    );
+    showToast(res.message, res.success ? 'success' : 'error');
+    return res;
   };
 
   const simulateLockExpiry = () => {
@@ -136,6 +209,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       localStorage.setItem('meetprep_credentials', JSON.stringify(expiredCreds));
     } catch {}
+    showToast('Simulated 12h session expiry: keys purged.', 'info');
   };
 
   const resetForNewCredentials = () => {
@@ -150,9 +224,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: 'Not Configured',
     };
     setCredentials(blankCreds);
+    setMeetings([]);
     try {
       localStorage.removeItem('meetprep_credentials');
     } catch {}
+    showToast('Credentials cleared for re-entry.', 'info');
   };
 
   const deleteCredentials = () => {
@@ -167,23 +243,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: 'Not Configured',
     };
     setCredentials(blankCreds);
+    setMeetings([]);
     try {
       localStorage.removeItem('meetprep_credentials');
     } catch {}
-  };
-
-  const fillDummyCredentials = (): Partial<WorkflowCredentials> => {
-    // ★ Dummy values use realistic formats & lengths that pass the validation rules.
-    //   These are NOT real credentials — they are sample placeholders only.
-    return {
-      googleClientId:      '847293610584-a8kd9f3hm2nqp5rv7xwb1ycz4ej6otlu.apps.googleusercontent.com',   // 72 chars
-      googleClientSecret:  'GOCSPX-mK9pN2qR4sT6uV8wX0yB3dF5hJ7',                                       // 35 chars
-      openAiApiKey:        'sk-proj-aB3cD5eF7gH9iJ1kL3mN5oP7qR9sT1uV3wX5yZ7aB9cD1eF',                   // 56 chars
-      apifyApiKey:         'apify_api_kM9nP2qR4sT6uV8wX0yB3dF5hJ7lN9pQ',                                // 42 chars
-      linkedInCookie:      'li_at=AQEDATN3lBwD0zXPAAABl3pQvgAAAWR4FzCAAE4AZW1zN2tZcm54dWhzN1N2eHN1OGYybnRhMjM4aWp3OWFzZDhuYXZ5YXRlY2g0bWRxOHdlaWptMm5idXRoMjM4Zg==', // 160 chars
-      whatsAppBusinessId:  '109876543210985',                                                             // 15 digits
-      whatsAppAccessToken: 'EAAGm0PX4ZBsEBO3kZBwVjRqHtN2mFpL5sQdK8xW1nU7yC3vA9bD6eG0hI2jK4lM8nO0pQ2rS4tU6vW8xY0zA1bC3dE5fG7hI9jK1lM3nO5pQ7rS9tU1vW3xY5zA7bC9dE1fG3hI5jK7lM9nO1pQ3rS5tU7vW9xY1zA3bC5dE7f', // 183 chars
-    };
   };
 
   const viewMeetingPrep = (meetingId: string) => {
@@ -204,12 +267,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         simulateLockExpiry,
         resetForNewCredentials,
         deleteCredentials,
-        fillDummyCredentials,
         viewMeetingPrep,
         workflowStatus,
         isGuideOpen,
         openGuide,
-        closeGuide
+        closeGuide,
+        justCompletedSetup,
+        dismissCompletedSetupNotice,
+        isSyncing,
+        syncCalendar,
+        testWhatsAppAlert,
+        toast,
+        showToast,
+        dismissToast,
       }}
     >
       {children}

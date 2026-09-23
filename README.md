@@ -1,7 +1,13 @@
 <div align="center">
 
+<<<<<<< HEAD
 #  MeetPrep CRM (MeetingOS)
 ### *AI-Powered Meeting Preparation & Executive Intelligence Portal*
+=======
+# MeetPrep CRM (MeetingOS)
+
+### _AI-Powered Meeting Preparation & Executive Intelligence Portal_
+>>>>>>> 32e06f9 (docs: update README formatting)
 
 [![React 19](https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -39,6 +45,7 @@
 Senior executives, agency directors, and sales professionals often lose **30 to 45 minutes per meeting** manually digging through prior email correspondence, reviewing LinkedIn profiles, and drafting conversation agendas.
 
 **MeetPrep CRM** (MeetingOS) eliminates this overhead completely:
+
 1. **Monitors your calendar 24/7** via Google Calendar OAuth2 integration.
 2. **Conducts autonomous research** using Gmail API correspondence history and Apify LinkedIn scrapers.
 3. **Synthesizes strategic intelligence** via a 4-stage OpenAI GPT-4o LLM pipeline.
@@ -105,14 +112,14 @@ flowchart TD
 
 ### End-to-End Workflow Breakdown
 
-| Stage | Component | Frequency / Trigger | Output / Action |
-|---|---|---|---|
-| **1. Ingestion** | Google Calendar Node | Hourly automated cron | Discovers meetings scheduled to start in the next 60 minutes. |
-| **2. Context Retrieval** | Gmail API | Triggered by attendee email | Queries recent correspondence threads to capture negotiation context. |
-| **3. Web OSINT** | Apify LinkedIn Scraper | Authenticated via `li_at` cookie | Pulls career trajectory, recent posts, and executive profile details. |
-| **4. AI Synthesis** | OpenAI GPT-4o Chain | 4 specialized prompts | Generates: (a) Meeting Objective, (b) Email Recap, (c) LinkedIn Highlights, (d) Talking Points. |
-| **5. Mobile Dispatch** | Meta WhatsApp Cloud API | 60 mins before meeting | Pushes a formatted briefing card directly to the client's phone. |
-| **6. Web Portal** | MeetPrep CRM Interface | On-demand / browser | Displays real-time KPI metrics, upcoming calls, and full dossiers. |
+| Stage                    | Component               | Frequency / Trigger              | Output / Action                                                                                 |
+| ------------------------ | ----------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **1. Ingestion**         | Google Calendar Node    | Hourly automated cron            | Discovers meetings scheduled to start in the next 60 minutes.                                   |
+| **2. Context Retrieval** | Gmail API               | Triggered by attendee email      | Queries recent correspondence threads to capture negotiation context.                           |
+| **3. Web OSINT**         | Apify LinkedIn Scraper  | Authenticated via `li_at` cookie | Pulls career trajectory, recent posts, and executive profile details.                           |
+| **4. AI Synthesis**      | OpenAI GPT-4o Chain     | 4 specialized prompts            | Generates: (a) Meeting Objective, (b) Email Recap, (c) LinkedIn Highlights, (d) Talking Points. |
+| **5. Mobile Dispatch**   | Meta WhatsApp Cloud API | 60 mins before meeting           | Pushes a formatted briefing card directly to the client's phone.                                |
+| **6. Web Portal**        | MeetPrep CRM Interface  | On-demand / browser              | Displays real-time KPI metrics, upcoming calls, and full dossiers.                              |
 
 ---
 
@@ -129,12 +136,14 @@ src/components/views/
 ```
 
 ### 1. Executive Dashboard (`DashboardView.tsx`)
+
 - **Real-Time KPIs**: Track upcoming scheduled meetings, completed briefing dossiers, and estimated research hours saved (~6.5 hrs/week).
 - **Automation Engine Status**: Live heartbeat badge indicating whether the background n8n engine is active.
 - **Upcoming Meetings List**: Quick view of attendees, companies, date/time, and preparation progress.
 - **WhatsApp Dispatch Card**: Preview of the most recent briefing message delivered to the client's handset.
 
 ### 2. Meetings Schedule (`MeetingsView.tsx`)
+
 - **Instant Search**: Filter meetings by attendee name, organization, or meeting topic in real time.
 - **Status Filter Tabs**:
   - `All` — Comprehensive calendar feed.
@@ -144,6 +153,7 @@ src/components/views/
 - **Quick Actions**: One-click navigation directly to the attendee's briefing dossier.
 
 ### 3. Meeting Preparation Dossier (`MeetingPrepView.tsx`)
+
 - **Attendee Quick Switcher**: Toggle between scheduled attendees with a single click.
 - **Executive Attendee Profile**: Displays attendee avatar, full name, role, organization, verified email, and platform badge (Google Meet, Zoom, MS Teams).
 - **4 Structured Intelligence Modules**:
@@ -154,6 +164,7 @@ src/components/views/
 - **One-Click Export**: "Copy Brief" button instantly copies the full structured dossier to the clipboard.
 
 ### 4. Credentials & Connections Portal (`ConnectionsView.tsx`)
+
 - **Self-Service Credential Entry**: Allows clients to provide required API keys without touching server configuration.
 - **Quick Action Tools**:
   - `Fill Sample / Dummy Data` — Populates properly formatted test data for demo purposes.
@@ -197,15 +208,15 @@ The portal adheres to a **Zero-Knowledge, Ephemeral Credential Lifecycle** speci
 4. **Client-Side Validation & Entropy Checks**:
    All credential fields enforce strict format, length, and prefix constraints before allowing submission:
 
-| Credential | Expected Prefix / Suffix | Min / Max Length | Example Format |
-|---|---|---|---|
-| **Google Client ID** | Suffix: `.apps.googleusercontent.com` | 50 – 100 chars | `123456789-xxx.apps.googleusercontent.com` |
-| **Google Client Secret** | Prefix: `GOCSPX-` | 24 – 50 chars | `GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx` |
-| **OpenAI API Key** | Prefix: `sk-` | 40 – 200 chars | `sk-proj-xxxxxxxxxxxxxxxxxxxxxxxx` |
-| **Apify API Key** | Prefix: `apify_api_` | 30 – 60 chars | `apify_api_xxxxxxxxxxxxxxxxxxxxxx` |
-| **LinkedIn Cookie** | Prefix: `li_at=` | 40 – 350 chars | `li_at=AQEDATxxxxxxxxxxxxxxxxxxx` |
-| **WhatsApp Business ID** | Regex: `/^\d+$/` (Numeric) | 13 – 20 digits | `109876543210985` |
-| **WhatsApp Access Token** | Prefix: `EAA` | 100 – 300 chars | `EAAGm0PX4ZB... (150–200+ chars)` |
+| Credential                | Expected Prefix / Suffix              | Min / Max Length | Example Format                             |
+| ------------------------- | ------------------------------------- | ---------------- | ------------------------------------------ |
+| **Google Client ID**      | Suffix: `.apps.googleusercontent.com` | 50 – 100 chars   | `123456789-xxx.apps.googleusercontent.com` |
+| **Google Client Secret**  | Prefix: `GOCSPX-`                     | 24 – 50 chars    | `GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx`          |
+| **OpenAI API Key**        | Prefix: `sk-`                         | 40 – 200 chars   | `sk-proj-xxxxxxxxxxxxxxxxxxxxxxxx`         |
+| **Apify API Key**         | Prefix: `apify_api_`                  | 30 – 60 chars    | `apify_api_xxxxxxxxxxxxxxxxxxxxxx`         |
+| **LinkedIn Cookie**       | Prefix: `li_at=`                      | 40 – 350 chars   | `li_at=AQEDATxxxxxxxxxxxxxxxxxxx`          |
+| **WhatsApp Business ID**  | Regex: `/^\d+$/` (Numeric)            | 13 – 20 digits   | `109876543210985`                          |
+| **WhatsApp Access Token** | Prefix: `EAA`                         | 100 – 300 chars  | `EAAGm0PX4ZB... (150–200+ chars)`          |
 
 > [!NOTE]
 > The auto-purge timer duration is defined in [`src/context/AppContext.tsx`](file:///c:/Users/aditi/Desktop/nayva%20tech%20solutions/src/context/AppContext.tsx) via `LOCK_DURATION_MS = 12 * 60 * 60 * 1000`. You can customize this threshold for local testing or custom client requirements.
@@ -286,6 +297,7 @@ npm run dev
 ```
 
 The application will be accessible at:
+
 ```
 http://localhost:5173/
 ```
@@ -373,14 +385,16 @@ npm run lint
 The project includes `@supabase/supabase-js` pre-installed in `package.json`. To connect Supabase Auth:
 
 1. Create a Supabase client helper in `src/lib/supabase.ts`:
+
    ```typescript
-   import { createClient } from '@supabase/supabase-js';
+   import { createClient } from "@supabase/supabase-js";
 
    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
    export const supabase = createClient(supabaseUrl, supabaseAnonKey);
    ```
+
 2. Build an Auth Guard component in `src/components/auth/AuthGuard.tsx` to wrap `<AppProvider>`.
 3. Swap `localStorage` credential syncing in [`src/context/AppContext.tsx`](file:///c:/Users/aditi/Desktop/nayva%20tech%20solutions/src/context/AppContext.tsx) with authenticated database queries.
 
@@ -403,18 +417,18 @@ export const LOCK_DURATION_MS = 30 * 1000;
 
 ## 📦 Technology Stack
 
-| Technology | Category | Version | Purpose |
-|---|---|---|---|
-| [React](https://react.dev/) | Frontend Library | `19.2.x` | Modern component-driven UI architecture |
-| [TypeScript](https://www.typescriptlang.org/) | Language | `6.0.x` | Strict type safety across meetings, briefs, and credentials |
-| [Vite](https://vite.dev/) | Build Tool | `8.2.x` | Instant HMR development and fast production bundling |
-| [Tailwind CSS](https://tailwindcss.com/) | Styling Engine | `4.3.x` | Modern utility-first styling with `@tailwindcss/vite` |
-| [Lucide React](https://lucide.dev/) | Iconography | `1.42.x` | Crisp, modern SVG interface icons |
-| [Oxlint](https://oxc.rs/) | Code Quality | `1.79.x` | High-performance JavaScript/TypeScript linter |
-| [n8n](https://n8n.io/) | Workflow Automation | `Latest` | Background cron triggers, Gmail, Apify, and WhatsApp chaining |
-| [OpenAI GPT-4o](https://platform.openai.com/) | AI Engine | `2024-08-06` | Multi-agent dossier analysis and talking point synthesis |
-| [Apify](https://apify.com/) | Web Scraping | `Latest` | Ethical attendee LinkedIn background and career OSINT |
-| [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans) | Typography | `Google Fonts` | Executive, legible sans-serif font family |
+| Technology                                                               | Category            | Version        | Purpose                                                       |
+| ------------------------------------------------------------------------ | ------------------- | -------------- | ------------------------------------------------------------- |
+| [React](https://react.dev/)                                              | Frontend Library    | `19.2.x`       | Modern component-driven UI architecture                       |
+| [TypeScript](https://www.typescriptlang.org/)                            | Language            | `6.0.x`        | Strict type safety across meetings, briefs, and credentials   |
+| [Vite](https://vite.dev/)                                                | Build Tool          | `8.2.x`        | Instant HMR development and fast production bundling          |
+| [Tailwind CSS](https://tailwindcss.com/)                                 | Styling Engine      | `4.3.x`        | Modern utility-first styling with `@tailwindcss/vite`         |
+| [Lucide React](https://lucide.dev/)                                      | Iconography         | `1.42.x`       | Crisp, modern SVG interface icons                             |
+| [Oxlint](https://oxc.rs/)                                                | Code Quality        | `1.79.x`       | High-performance JavaScript/TypeScript linter                 |
+| [n8n](https://n8n.io/)                                                   | Workflow Automation | `Latest`       | Background cron triggers, Gmail, Apify, and WhatsApp chaining |
+| [OpenAI GPT-4o](https://platform.openai.com/)                            | AI Engine           | `2024-08-06`   | Multi-agent dossier analysis and talking point synthesis      |
+| [Apify](https://apify.com/)                                              | Web Scraping        | `Latest`       | Ethical attendee LinkedIn background and career OSINT         |
+| [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans) | Typography          | `Google Fonts` | Executive, legible sans-serif font family                     |
 
 ---
 

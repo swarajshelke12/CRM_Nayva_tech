@@ -8,10 +8,10 @@ import { MeetingsView } from './components/views/MeetingsView';
 import { MeetingPrepView } from './components/views/MeetingPrepView';
 import { ConnectionsView } from './components/views/ConnectionsView';
 import { HowItWorksModal } from './components/common/HowItWorksModal';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
-  const { currentScreen } = useApp();
+  const { currentScreen, toast, dismissToast } = useApp();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const renderActiveScreen = () => {
@@ -33,6 +33,22 @@ const MainLayout: React.FC = () => {
       {/* How It Works User Guide Modal */}
       <HowItWorksModal />
 
+      {/* Production Toast Notifications */}
+      {toast && (
+        <div className="fixed bottom-5 right-5 z-50 max-w-sm flex items-center gap-2.5 px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-750 text-xs shadow-2xl animate-in slide-in-from-bottom-3 duration-200">
+          {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />}
+          {toast.type === 'error' && <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />}
+          {toast.type === 'info' && <Info className="w-4 h-4 text-blue-400 flex-shrink-0" />}
+          <span className="text-zinc-200 flex-1 leading-snug">{toast.message}</span>
+          <button
+            onClick={dismissToast}
+            className="text-zinc-500 hover:text-zinc-300 p-0.5 transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Fixed Sidebar */}
       <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
 
@@ -52,7 +68,7 @@ const MainLayout: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="font-semibold text-zinc-300">MeetPrep CRM</span>
               <span>·</span>
-              <span className="text-zinc-400">AI Meeting Preparation</span>
+              <span className="text-zinc-400">Production AI Meeting Intelligence</span>
               <span>·</span>
               <span>Navya Tech Solutions</span>
             </div>

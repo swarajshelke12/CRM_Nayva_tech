@@ -1,36 +1,27 @@
 import type { Meeting, WorkflowCredentials, WorkflowStatus } from '../types';
 
 // ─── Meetings ─────────────────────────────────────────────────────────────────
-// Populated live by the "Check For Upcoming Meetings" trigger (Google Calendar OAuth2).
+// Populated live by the Google Calendar sync / n8n workflow trigger.
+// Starts empty for real production use.
 
 export const initialMeetings: Meeting[] = [];
 
 // ─── Workflow Credentials ─────────────────────────────────────────────────────
-// All fields start blank — filled in by the user via the Connections screen.
+// All fields start blank — filled in by the client via the Connections screen.
 
 export const initialCredentials: WorkflowCredentials = {
-  // Google Integration
   googleClientId: '',
   googleClientSecret: '',
-
-  // OpenAI
   openAiApiKey: '',
-
-  // Apify
   apifyApiKey: '',
-
-  // LinkedIn
   linkedInCookie: '',
-
-  // WhatsApp
   whatsAppBusinessId: '',
   whatsAppAccessToken: '',
-
   status: 'Not Configured',
 };
 
 // ─── Workflow Status ───────────────────────────────────────────────────────────
-// Reflects a fresh, unconfigured state — no runs yet.
+// Production initial state — updates live as workflow executes.
 
 export const mockWorkflowStatus: WorkflowStatus = {
   name: 'AI Meeting Prep & WhatsApp Dispatch',

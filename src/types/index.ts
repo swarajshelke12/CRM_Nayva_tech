@@ -58,7 +58,7 @@ export interface WorkflowCredentials {
   status: 'Not Configured' | 'Submitted' | 'Configured' | 'Locked & Expired';
   lastSubmitted?: string;
   submittedAtTimestamp?: number;  // Epoch ms timestamp when submitted
-  expiresAtTimestamp?: number;    // Epoch ms timestamp when 24h lock triggers
+  expiresAtTimestamp?: number;    // Epoch ms timestamp when 12h lock triggers
 }
 
 // ─── Workflow Monitoring (mock data only — no live backend connection yet) ────

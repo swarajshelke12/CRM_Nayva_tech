@@ -8,7 +8,7 @@
 [![Vite](https://img.shields.io/badge/Vite-8.2-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![n8n Automation](https://img.shields.io/badge/n8n-Workflow_Engine-EA4B71?style=flat-square&logo=n8n&logoColor=white)](https://n8n.io/)
-[![Security Model](https://img.shields.io/badge/Security-24h_Auto--Purge-10B981?style=flat-square&logo=shield&logoColor=white)](#-security--privacy-architecture)
+[![Security Model](https://img.shields.io/badge/Security-12h_Auto--Purge-10B981?style=flat-square&logo=shield&logoColor=white)](#-security--privacy-architecture)
 [![License](https://img.shields.io/badge/License-Proprietary-8B5CF6?style=flat-square)](https://www.navyatech.co.in/)
 
 <p align="center">
@@ -43,7 +43,7 @@ Senior executives, agency directors, and sales professionals often lose **30 to 
 2. **Conducts autonomous research** using Gmail API correspondence history and Apify LinkedIn scrapers.
 3. **Synthesizes strategic intelligence** via a 4-stage OpenAI GPT-4o LLM pipeline.
 4. **Dispatches actionable briefings** directly to your **WhatsApp** 60 minutes before the call, while archiving full dossiers inside an executive web dashboard.
-5. **Guarantees zero-knowledge security** using a client-side **24-hour auto-purge** lifecycle with zero permanent database storage.
+5. **Guarantees zero-knowledge security** using a client-side **12-hour auto-purge** lifecycle with zero permanent database storage.
 
 ---
 
@@ -58,7 +58,7 @@ Senior executives, agency directors, and sales professionals often lose **30 to 
   - Distilled Historical Email Threads
   - LinkedIn Career History & Recent Activity OSINT
   - 4 High-Impact, Conversational Talking Points
-- **Zero-Knowledge 24-Hour Ephemeral Security**: Client credentials stay in browser memory and are **permanently wiped after 24 hours**—eliminating cloud credential leaks.
+- **Zero-Knowledge 12-Hour Ephemeral Security**: Client credentials stay in browser memory and are **permanently wiped after 12 hours**—eliminating cloud credential leaks.
 - **Built-in Interactive User Guide**: Dedicated "How It Works" walkthrough for non-technical business clients.
 - **Production-Ready Frontend**: Engineered with React 19, TypeScript, Tailwind CSS v4, and sub-second Vite 8 compilation.
 
@@ -192,7 +192,7 @@ The portal adheres to a **Zero-Knowledge, Ephemeral Credential Lifecycle** speci
 ### Security Tenets
 
 1. **Zero Database Footprint**: Credentials are never sent to or stored in a persistent backend database.
-2. **24-Hour Ephemeral Purge**: Submitted keys are permanently wiped from browser memory and storage after 24 hours. Once purged, neither the client nor Navya Tech can inspect previous keys.
+2. **12-Hour Ephemeral Purge**: Submitted keys are permanently wiped from browser memory and storage after 12 hours. Once purged, neither the client nor Navya Tech can inspect previous keys.
 3. **Hidden by Default**: After submission, values are masked with an OpenAI/Gemini-style security guard. An explicit "Unlock & View" action is required to inspect them.
 4. **Client-Side Validation & Entropy Checks**:
    All credential fields enforce strict format, length, and prefix constraints before allowing submission:
@@ -208,7 +208,7 @@ The portal adheres to a **Zero-Knowledge, Ephemeral Credential Lifecycle** speci
 | **WhatsApp Access Token** | Prefix: `EAA` | 100 – 300 chars | `EAAGm0PX4ZB... (150–200+ chars)` |
 
 > [!NOTE]
-> The auto-purge timer duration is defined in [`src/context/AppContext.tsx`](file:///c:/Users/aditi/Desktop/nayva%20tech%20solutions/src/context/AppContext.tsx) via `LOCK_DURATION_MS = 24 * 60 * 60 * 1000`. You can customize this threshold for local testing or custom client requirements.
+> The auto-purge timer duration is defined in [`src/context/AppContext.tsx`](file:///c:/Users/aditi/Desktop/nayva%20tech%20solutions/src/context/AppContext.tsx) via `LOCK_DURATION_MS = 12 * 60 * 60 * 1000`. You can customize this threshold for local testing or custom client requirements.
 
 ---
 

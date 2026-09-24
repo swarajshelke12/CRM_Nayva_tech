@@ -10,6 +10,17 @@ import {
 
 export const LOCK_DURATION_MS = 12 * 60 * 60 * 1000; // 12 hours in milliseconds (Production setting)
 
+export function isCredentialComplete(creds: Partial<WorkflowCredentials>): boolean {
+  return Boolean(
+    creds.googleClientId?.trim() &&
+    creds.googleClientSecret?.trim() &&
+    creds.openAiApiKey?.trim() &&
+    creds.apifyApiKey?.trim() &&
+    creds.whatsAppBusinessId?.trim() &&
+    creds.whatsAppAccessToken?.trim()
+  );
+}
+
 function sanitizeCredentialsIfExpired(creds: WorkflowCredentials): WorkflowCredentials {
   if (creds.expiresAtTimestamp && Date.now() >= creds.expiresAtTimestamp) {
     return {
@@ -26,6 +37,12 @@ function sanitizeCredentialsIfExpired(creds: WorkflowCredentials): WorkflowCrede
       expiresAtTimestamp: creds.expiresAtTimestamp,
     };
   }
+
+  // If status claims Submitted/Configured but required fields are missing, treat as Not Configured
+  if ((creds.status === 'Submitted' || creds.status === 'Configured') && !isCredentialComplete(creds)) {
+    return initialCredentials;
+  }
+
   return creds;
 }
 
@@ -142,30 +159,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       minute: '2-digit',
     });
 
+    const isComplete = isCredentialComplete(updates);
+
     const newCreds: WorkflowCredentials = {
       ...credentials,
       ...updates,
-      status: 'Submitted',
-      submittedAtTimestamp: now,
-      expiresAtTimestamp: expiresAt,
-      lastSubmitted: `${formattedTime} (Auto-locks in 12h)`,
+      status: isComplete ? 'Submitted' : 'Not Configured',
+      submittedAtTimestamp: isComplete ? now : undefined,
+      expiresAtTimestamp: isComplete ? expiresAt : undefined,
+      lastSubmitted: isComplete ? `${formattedTime} (Auto-locks in 12h)` : undefined,
     };
 
     setCredentials(newCreds);
-    setWorkflowStatus((prev) => ({
-      ...prev,
-      isActive: true,
-      lastRunAt: 'Just now',
-      nextRunAt: 'In 60 minutes',
-    }));
-    setJustCompletedSetup(true);
+
+    if (isComplete) {
+      setWorkflowStatus((prev) => ({
+        ...prev,
+        isActive: true,
+        lastRunAt: 'Just now',
+        nextRunAt: 'In 60 minutes',
+      }));
+      setJustCompletedSetup(true);
+    }
 
     try {
       localStorage.setItem('meetprep_credentials', JSON.stringify(newCreds));
     } catch {}
 
-    // Asynchronously dispatch to production n8n webhook if endpoint configured
-    await sendCredentialsToWebhook(newCreds);
+    if (isComplete) {
+      // Asynchronously dispatch to production n8n webhook if endpoint configured
+      await sendCredentialsToWebhook(newCreds);
+    }
   };
 
   const syncCalendar = async () => {

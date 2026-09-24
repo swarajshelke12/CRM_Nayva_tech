@@ -43,14 +43,7 @@ npm run preview  # Preview production build locally
 | **Styling**         | Tailwind CSS      | v4.3.x       | Utility-first CSS via `@tailwindcss/vite` |
 | **Icons**           | Lucide React      | 1.42.x       | SVG icons                                 |
 | **Linting**         | Oxlint            | 1.79.x       | Fast static analysis                      |
-| **Auth (Optional)** | Supabase          | 2.116.x      | Pre-installed, not yet integrated         |
 | **Typography**      | Plus Jakarta Sans | Google Fonts | Executive sans-serif                      |
-
-### Key Dependencies
-
-- `react-router-dom` (7.18.3) — Client-side routing (installed but not actively used)
-- `clsx` + `tailwind-merge` — Conditional className utilities
-- `autoprefixer` + `postcss` — CSS processing
 
 ---
 
@@ -61,18 +54,33 @@ npm run preview  # Preview production build locally
 ```
 src/
 ├── main.tsx                    # React DOM entry point
-├── App.tsx                     # Root layout orchestrator
-├── index.css                   # Tailwind v4 base + design tokens
-├── App.css                     # Supplementary styles
+├── App.tsx                     # Root layout orchestrator & view router
+├── index.css                   # Tailwind v4 base styling & scrollbar tokens
 │
 ├── types/
 │   └── index.ts                # Core interfaces: Meeting, Brief, Credentials, WorkflowStatus
 │
 ├── context/
-│   └── AppContext.tsx          # Global state + 12h auto-purge timer logic
+│   └── AppContext.tsx          # Global state, validation guard & 12h auto-purge timer
 │
 ├── data/
-│   └── mockData.ts             # Initial meetings + workflow metrics
+│   └── mockData.ts             # Initial state definitions
+│
+├── services/
+│   └── webhookService.ts       # n8n webhook dispatcher & calendar sync
+│
+└── components/
+    ├── layout/
+    │   ├── Sidebar.tsx         # Responsive navigation & agency branding
+    │   └── TopHeader.tsx       # Live status header & user guide toggle
+    ├── views/
+    │   ├── DashboardView.tsx   # Executive metrics, active workflow & upcoming calls
+    │   ├── MeetingsView.tsx    # Filterable scheduled sessions list
+    │   ├── MeetingPrepView.tsx # 4-quadrant executive preparation dossier
+    │   └── ConnectionsView.tsx # Strict credential validation, setup & 12h vault lock
+    └── common/
+        └── HowItWorksModal.tsx # Non-technical client workflow walkthrough
+```
 │
 ├── services/
 │   └── webhookService.ts       # n8n webhook integration (optional live sync)

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import type { WorkflowCredentials } from '../../types';
 import {
   Mail,
   Bot,
   Key,
   MessageSquare,
   CheckCircle2,
+  AlertCircle,
   Eye,
   EyeOff,
   ShieldCheck,
@@ -26,22 +28,158 @@ function formatRemainingTime(ms: number): string {
   return `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
 }
 
+export type FieldKey =
+  | 'googleClientId'
+  | 'googleClientSecret'
+  | 'openAiApiKey'
+  | 'apifyApiKey'
+  | 'linkedInCookie'
+  | 'whatsAppBusinessId'
+  | 'whatsAppAccessToken';
+
+export type FieldErrors = Partial<Record<FieldKey, string>>;
+
+export function validateSingleField(field: FieldKey, rawValue: string | undefined): string | undefined {
+  const val = rawValue ? rawValue.trim() : '';
+
+  switch (field) {
+    case 'googleClientId':
+      if (!val) return 'This field is remaining: Enter your Google Client ID.';
+      if (val.length < 15 || (!val.includes('.apps.googleusercontent.com') && val.length < 20)) {
+        return 'Invalid format: Must be a valid Google Client ID (e.g. xxxxx.apps.googleusercontent.com).';
+      }
+      return undefined;
+
+    case 'googleClientSecret':
+      if (!val) return 'This field is remaining: Enter your Google Client Secret.';
+      if (val.length < 8) {
+        return 'Invalid format: Client Secret must be at least 8 characters (e.g. GOCSPX-xxxxxx).';
+      }
+      return undefined;
+
+    case 'openAiApiKey':
+      if (!val) return 'This field is remaining: Enter your OpenAI API Key.';
+      if (!val.startsWith('sk-') || val.length < 20) {
+        return 'Invalid format: Must start with "sk-" and be at least 20 characters.';
+      }
+      return undefined;
+
+    case 'apifyApiKey':
+      if (!val) return 'This field is remaining: Enter your Apify API Key.';
+      if (!val.startsWith('apify_') || val.length < 15) {
+        return 'Invalid format: Must start with "apify_api_" or "apify_" (min 15 chars).';
+      }
+      return undefined;
+
+    case 'whatsAppBusinessId':
+      if (!val) return 'This field is remaining: Enter your Meta WhatsApp Business ID.';
+      if (!/^\d{10,20}$/.test(val)) {
+        return 'Invalid format: Must be a numeric Meta Business Account ID (10 to 20 digits).';
+      }
+      return undefined;
+
+    case 'whatsAppAccessToken':
+      if (!val) return 'This field is remaining: Enter your WhatsApp Access Token.';
+      if (!val.startsWith('EAA') || val.length < 25) {
+        return 'Invalid format: Meta Access Token must start with "EAA..." (min 25 chars).';
+      }
+      return undefined;
+
+    case 'linkedInCookie':
+      if (val && val.length < 8) {
+        return 'Invalid format: LinkedIn cookie must be a valid li_at string (min 8 chars).';
+      }
+      return undefined;
+
+    default:
+      return undefined;
+  }
+}
+
+export function validateAllFields(form: WorkflowCredentials): {
+  errors: FieldErrors;
+  isValid: boolean;
+  remainingCount: number;
+  formatErrorCount: number;
+  summaryMessage: string;
+} {
+  const errors: FieldErrors = {};
+  let remainingCount = 0;
+  let formatErrorCount = 0;
+
+  const requiredKeys: FieldKey[] = [
+    'googleClientId',
+    'googleClientSecret',
+    'openAiApiKey',
+    'apifyApiKey',
+    'whatsAppBusinessId',
+    'whatsAppAccessToken'
+  ];
+
+  requiredKeys.forEach((key) => {
+    const val = (form[key as keyof WorkflowCredentials] as string) || '';
+    if (!val.trim()) {
+      errors[key] = 'This field is remaining: Please enter your credential.';
+      remainingCount++;
+    } else {
+      const err = validateSingleField(key, val);
+      if (err) {
+        errors[key] = err;
+        formatErrorCount++;
+      }
+    }
+  });
+
+  if (form.linkedInCookie?.trim()) {
+    const err = validateSingleField('linkedInCookie', form.linkedInCookie);
+    if (err) {
+      errors.linkedInCookie = err;
+      formatErrorCount++;
+    }
+  }
+
+  const isValid = Object.keys(errors).length === 0;
+
+  let summaryMessage = '';
+  if (!isValid) {
+    if (remainingCount === 6) {
+      summaryMessage = 'Cannot activate: All 6 required credential fields are remaining.';
+    } else if (remainingCount > 0 && formatErrorCount > 0) {
+      summaryMessage = `Cannot activate: ${remainingCount} field(s) remaining and ${formatErrorCount} invalid format(s).`;
+    } else if (remainingCount > 0) {
+      summaryMessage = `Cannot activate: ${remainingCount} required credential field(s) remaining.`;
+    } else {
+      summaryMessage = 'Cannot activate: Please correct invalid credential formats highlighted below.';
+    }
+  }
+
+  return { errors, isValid, remainingCount, formatErrorCount, summaryMessage };
+}
+
 interface SimpleFieldProps {
   label: string;
   value: string;
   onChange: (val: string) => void;
+  onBlur?: () => void;
   placeholder: string;
   hint?: string;
   isPassword?: boolean;
+  error?: string;
+  isValid?: boolean;
+  required?: boolean;
 }
 
 const SimpleField: React.FC<SimpleFieldProps> = ({
   label,
   value,
   onChange,
+  onBlur,
   placeholder,
   hint,
-  isPassword = true
+  isPassword = true,
+  error,
+  isValid = false,
+  required = true
 }) => {
   const [show, setShow] = useState(false);
   const isFilled = value.trim().length > 0;
@@ -51,7 +189,9 @@ const SimpleField: React.FC<SimpleFieldProps> = ({
       <div className="flex items-center justify-between">
         <label className="text-xs font-medium text-zinc-300 flex items-center gap-1.5">
           <span>{label}</span>
-          {isFilled && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
+          {required && <span className="text-amber-400 text-xs" title="Required field">*</span>}
+          {isValid && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
+          {error && <AlertCircle className="w-3.5 h-3.5 text-red-400" />}
         </label>
         {hint && <span className="text-[11px] text-zinc-500">{hint}</span>}
       </div>
@@ -61,9 +201,12 @@ const SimpleField: React.FC<SimpleFieldProps> = ({
           type={isPassword && !show ? 'password' : 'text'}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
           placeholder={placeholder}
           className={`w-full bg-zinc-950 border rounded-lg px-3.5 py-2 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none transition-all pr-10 font-mono ${
-            isFilled
+            error
+              ? 'border-red-500/80 focus:border-red-500 ring-1 ring-red-900/40 bg-red-950/15'
+              : isValid
               ? 'border-emerald-800/60 focus:border-emerald-500 ring-1 ring-emerald-900/30'
               : 'border-zinc-800 focus:border-zinc-600'
           }`}
@@ -79,6 +222,13 @@ const SimpleField: React.FC<SimpleFieldProps> = ({
           </button>
         )}
       </div>
+
+      {error && (
+        <p className="text-[11px] text-red-400 flex items-center gap-1.5 mt-1 leading-tight animate-in fade-in duration-150">
+          <AlertCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+          <span>{error}</span>
+        </p>
+      )}
     </div>
   );
 };
@@ -90,10 +240,15 @@ export const ConnectionsView: React.FC = () => {
     resetForNewCredentials,
     setCurrentScreen,
     openGuide,
-    testWhatsAppAlert
+    testWhatsAppAlert,
+    showToast
   } = useApp();
 
-  const [form, setForm] = useState(credentials);
+  const [form, setForm] = useState<WorkflowCredentials>(credentials);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [touched, setTouched] = useState<Partial<Record<FieldKey, boolean>>>({});
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+
   const [remainingMs, setRemainingMs] = useState<number>(0);
   const [showAdvancedHelp, setShowAdvancedHelp] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -117,8 +272,19 @@ export const ConnectionsView: React.FC = () => {
     return () => clearInterval(interval);
   }, [credentials.expiresAtTimestamp]);
 
-  const setField = (field: keyof typeof form, value: string) => {
+  const setField = (field: FieldKey, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    if (hasAttemptedSubmit || touched[field]) {
+      const err = validateSingleField(field, value);
+      setErrors((prev) => ({ ...prev, [field]: err }));
+    }
+  };
+
+  const handleBlur = (field: FieldKey) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const val = (form[field as keyof WorkflowCredentials] as string) || '';
+    const err = validateSingleField(field, val);
+    setErrors((prev) => ({ ...prev, [field]: err }));
   };
 
   const isLocked =
@@ -128,24 +294,71 @@ export const ConnectionsView: React.FC = () => {
   const isConfigured =
     (credentials.status === 'Submitted' || credentials.status === 'Configured') && !isLocked;
 
-  const countFilled = [
-    form.googleClientId && form.googleClientSecret,
-    form.openAiApiKey,
-    form.apifyApiKey,
-    form.whatsAppBusinessId && form.whatsAppAccessToken
-  ].filter(Boolean).length;
+  // Individual card readiness checks
+  const isGoogleValid =
+    Boolean(form.googleClientId?.trim() && form.googleClientSecret?.trim()) &&
+    !validateSingleField('googleClientId', form.googleClientId) &&
+    !validateSingleField('googleClientSecret', form.googleClientSecret);
+
+  const isOpenAiValid =
+    Boolean(form.openAiApiKey?.trim()) &&
+    !validateSingleField('openAiApiKey', form.openAiApiKey);
+
+  const isApifyValid =
+    Boolean(form.apifyApiKey?.trim()) &&
+    !validateSingleField('apifyApiKey', form.apifyApiKey) &&
+    (!form.linkedInCookie?.trim() || !validateSingleField('linkedInCookie', form.linkedInCookie));
+
+  const isWhatsAppValid =
+    Boolean(form.whatsAppBusinessId?.trim() && form.whatsAppAccessToken?.trim()) &&
+    !validateSingleField('whatsAppBusinessId', form.whatsAppBusinessId) &&
+    !validateSingleField('whatsAppAccessToken', form.whatsAppAccessToken);
+
+  const readyCardsCount = [isGoogleValid, isOpenAiValid, isApifyValid, isWhatsAppValid].filter(Boolean).length;
 
   const handleSaveAndContinue = async () => {
+    setHasAttemptedSubmit(true);
+    const { errors: newErrors, isValid, summaryMessage } = validateAllFields(form);
+
+    if (!isValid) {
+      setErrors(newErrors);
+      showToast(summaryMessage, 'error');
+      return;
+    }
+
+    setErrors({});
     setIsSaving(true);
     await updateCredentials(form);
     setIsSaving(false);
+    showToast('✓ Credentials verified and secured in 12-hour vault!', 'success');
     setCurrentScreen('dashboard');
   };
 
   const handleTestWhatsApp = async () => {
+    const bizErr = validateSingleField('whatsAppBusinessId', form.whatsAppBusinessId);
+    const tokenErr = validateSingleField('whatsAppAccessToken', form.whatsAppAccessToken);
+
+    if (bizErr || tokenErr) {
+      showToast('Please enter a valid WhatsApp Business ID and Access Token before testing.', 'error');
+      setErrors((prev) => ({
+        ...prev,
+        whatsAppBusinessId: bizErr,
+        whatsAppAccessToken: tokenErr
+      }));
+      setTouched((prev) => ({ ...prev, whatsAppBusinessId: true, whatsAppAccessToken: true }));
+      return;
+    }
+
     setIsTestingWhatsApp(true);
     await testWhatsAppAlert();
     setIsTestingWhatsApp(false);
+  };
+
+  const handleReset = () => {
+    resetForNewCredentials();
+    setErrors({});
+    setTouched({});
+    setHasAttemptedSubmit(false);
   };
 
   return (
@@ -160,14 +373,20 @@ export const ConnectionsView: React.FC = () => {
                 className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
                   isConfigured
                     ? 'bg-emerald-950/70 border border-emerald-800/70 text-emerald-400'
-                    : 'bg-zinc-800 border border-zinc-700 text-zinc-400'
+                    : readyCardsCount === 4
+                    ? 'bg-emerald-950/70 border border-emerald-800/70 text-emerald-400'
+                    : 'bg-amber-950/70 border border-amber-800/70 text-amber-400'
                 }`}
               >
-                {isConfigured ? '🟢 Production Active' : `${countFilled} of 4 Ready`}
+                {isConfigured
+                  ? '🟢 Production Active'
+                  : readyCardsCount === 4
+                  ? '4 of 4 Ready to Lock'
+                  : `⚠️ ${readyCardsCount} of 4 Ready (Action Required)`}
               </span>
             </div>
             <p className="text-xs text-zinc-400">
-              Enter your service keys once. All briefings and WhatsApp alerts run automatically in the background.
+              Enter your integration keys. All fields will be strictly validated before locking into the 12-hour ephemeral vault.
             </p>
           </div>
 
@@ -199,7 +418,7 @@ export const ConnectionsView: React.FC = () => {
         </div>
       </div>
 
-      {/* ── 4 Crisp, Clean Connection Cards ─────────────────────────────────── */}
+      {/* ── 4 Connection Cards ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Card 1: Google Calendar & Gmail */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
@@ -213,8 +432,12 @@ export const ConnectionsView: React.FC = () => {
                 <p className="text-[11px] text-zinc-500">Reads upcoming invites &amp; email threads</p>
               </div>
             </div>
-            {form.googleClientId && form.googleClientSecret ? (
-              <span className="w-2 h-2 rounded-full bg-emerald-400" title="Configured" />
+            {isGoogleValid ? (
+              <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" /> Ready
+              </span>
+            ) : errors.googleClientId || errors.googleClientSecret ? (
+              <span className="text-[10px] text-red-400 font-medium">Error</span>
             ) : (
               <span className="text-[10px] text-amber-400 font-medium">Pending</span>
             )}
@@ -224,12 +447,18 @@ export const ConnectionsView: React.FC = () => {
             label="Client ID"
             value={form.googleClientId}
             onChange={(val) => setField('googleClientId', val)}
+            onBlur={() => handleBlur('googleClientId')}
+            error={errors.googleClientId}
+            isValid={isGoogleValid || (Boolean(form.googleClientId.trim()) && !errors.googleClientId && !validateSingleField('googleClientId', form.googleClientId))}
             placeholder="xxxxxx.apps.googleusercontent.com"
           />
           <SimpleField
             label="Client Secret"
             value={form.googleClientSecret}
             onChange={(val) => setField('googleClientSecret', val)}
+            onBlur={() => handleBlur('googleClientSecret')}
+            error={errors.googleClientSecret}
+            isValid={isGoogleValid || (Boolean(form.googleClientSecret.trim()) && !errors.googleClientSecret && !validateSingleField('googleClientSecret', form.googleClientSecret))}
             placeholder="GOCSPX-xxxxxx"
           />
         </div>
@@ -246,8 +475,12 @@ export const ConnectionsView: React.FC = () => {
                 <p className="text-[11px] text-zinc-500">Synthesizes dossiers &amp; talking points</p>
               </div>
             </div>
-            {form.openAiApiKey ? (
-              <span className="w-2 h-2 rounded-full bg-emerald-400" title="Configured" />
+            {isOpenAiValid ? (
+              <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" /> Ready
+              </span>
+            ) : errors.openAiApiKey ? (
+              <span className="text-[10px] text-red-400 font-medium">Error</span>
             ) : (
               <span className="text-[10px] text-amber-400 font-medium">Pending</span>
             )}
@@ -257,6 +490,9 @@ export const ConnectionsView: React.FC = () => {
             label="OpenAI API Key"
             value={form.openAiApiKey}
             onChange={(val) => setField('openAiApiKey', val)}
+            onBlur={() => handleBlur('openAiApiKey')}
+            error={errors.openAiApiKey}
+            isValid={isOpenAiValid || (Boolean(form.openAiApiKey.trim()) && !errors.openAiApiKey && !validateSingleField('openAiApiKey', form.openAiApiKey))}
             placeholder="sk-proj-xxxxxxxxxxxx"
             hint="Private key"
           />
@@ -277,8 +513,12 @@ export const ConnectionsView: React.FC = () => {
                 <p className="text-[11px] text-zinc-500">Pulls attendee career &amp; company background</p>
               </div>
             </div>
-            {form.apifyApiKey ? (
-              <span className="w-2 h-2 rounded-full bg-emerald-400" title="Configured" />
+            {isApifyValid ? (
+              <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" /> Ready
+              </span>
+            ) : errors.apifyApiKey || errors.linkedInCookie ? (
+              <span className="text-[10px] text-red-400 font-medium">Error</span>
             ) : (
               <span className="text-[10px] text-amber-400 font-medium">Pending</span>
             )}
@@ -288,14 +528,21 @@ export const ConnectionsView: React.FC = () => {
             label="Apify API Key"
             value={form.apifyApiKey}
             onChange={(val) => setField('apifyApiKey', val)}
+            onBlur={() => handleBlur('apifyApiKey')}
+            error={errors.apifyApiKey}
+            isValid={isApifyValid || (Boolean(form.apifyApiKey.trim()) && !errors.apifyApiKey && !validateSingleField('apifyApiKey', form.apifyApiKey))}
             placeholder="apify_api_xxxxxxxxxxxx"
           />
           <SimpleField
             label="LinkedIn Cookie (Optional)"
             value={form.linkedInCookie || ''}
             onChange={(val) => setField('linkedInCookie', val)}
+            onBlur={() => handleBlur('linkedInCookie')}
+            error={errors.linkedInCookie}
+            isValid={Boolean(form.linkedInCookie?.trim()) && !errors.linkedInCookie && !validateSingleField('linkedInCookie', form.linkedInCookie)}
             placeholder="li_at=AQEDAT..."
             hint="For deep profile context"
+            required={false}
           />
         </div>
 
@@ -311,8 +558,12 @@ export const ConnectionsView: React.FC = () => {
                 <p className="text-[11px] text-zinc-500">Delivers briefings 60m before every call</p>
               </div>
             </div>
-            {form.whatsAppBusinessId && form.whatsAppAccessToken ? (
-              <span className="w-2 h-2 rounded-full bg-emerald-400" title="Configured" />
+            {isWhatsAppValid ? (
+              <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" /> Ready
+              </span>
+            ) : errors.whatsAppBusinessId || errors.whatsAppAccessToken ? (
+              <span className="text-[10px] text-red-400 font-medium">Error</span>
             ) : (
               <span className="text-[10px] text-amber-400 font-medium">Pending</span>
             )}
@@ -322,6 +573,9 @@ export const ConnectionsView: React.FC = () => {
             label="WhatsApp Business ID"
             value={form.whatsAppBusinessId}
             onChange={(val) => setField('whatsAppBusinessId', val)}
+            onBlur={() => handleBlur('whatsAppBusinessId')}
+            error={errors.whatsAppBusinessId}
+            isValid={isWhatsAppValid || (Boolean(form.whatsAppBusinessId.trim()) && !errors.whatsAppBusinessId && !validateSingleField('whatsAppBusinessId', form.whatsAppBusinessId))}
             placeholder="15-digit Meta Business ID"
             isPassword={false}
           />
@@ -329,24 +583,25 @@ export const ConnectionsView: React.FC = () => {
             label="WhatsApp Access Token"
             value={form.whatsAppAccessToken}
             onChange={(val) => setField('whatsAppAccessToken', val)}
+            onBlur={() => handleBlur('whatsAppAccessToken')}
+            error={errors.whatsAppAccessToken}
+            isValid={isWhatsAppValid || (Boolean(form.whatsAppAccessToken.trim()) && !errors.whatsAppAccessToken && !validateSingleField('whatsAppAccessToken', form.whatsAppAccessToken))}
             placeholder="EAAxxxxxxxxxxxxxxxxxxxx"
           />
 
-          {form.whatsAppBusinessId && form.whatsAppAccessToken && (
-            <button
-              type="button"
-              onClick={handleTestWhatsApp}
-              disabled={isTestingWhatsApp}
-              className="w-full mt-2 py-1.5 px-3 rounded-lg bg-green-950/40 hover:bg-green-900/40 text-green-300 text-xs font-medium border border-green-800/40 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
-            >
-              <Send className="w-3 h-3 text-green-400" />
-              <span>{isTestingWhatsApp ? 'Dispatching Test Message...' : 'Send Test WhatsApp Briefing'}</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleTestWhatsApp}
+            disabled={isTestingWhatsApp}
+            className="w-full mt-2 py-1.5 px-3 rounded-lg bg-green-950/40 hover:bg-green-900/40 text-green-300 text-xs font-medium border border-green-800/40 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+          >
+            <Send className="w-3 h-3 text-green-400" />
+            <span>{isTestingWhatsApp ? 'Dispatching Test Message...' : 'Send Test WhatsApp Briefing'}</span>
+          </button>
         </div>
       </div>
 
-      {/* ── Expandable Step-by-Step Helper (Keeps page clean by default) ──────── */}
+      {/* ── Expandable Step-by-Step Helper ──────────────────────────────────── */}
       <div className="border border-zinc-800/80 rounded-xl bg-zinc-950/40 overflow-hidden">
         <button
           type="button"
@@ -380,9 +635,7 @@ export const ConnectionsView: React.FC = () => {
           {isConfigured && (
             <button
               type="button"
-              onClick={() => {
-                resetForNewCredentials();
-              }}
+              onClick={handleReset}
               className="px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition-colors flex items-center gap-1.5"
               title="Clear credentials to re-enter"
             >
@@ -395,7 +648,11 @@ export const ConnectionsView: React.FC = () => {
             type="button"
             onClick={handleSaveAndContinue}
             disabled={isSaving}
-            className="px-5 py-2.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+            className={`px-5 py-2.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 ${
+              readyCardsCount === 4
+                ? 'bg-zinc-100 hover:bg-white text-zinc-950'
+                : 'bg-zinc-800 hover:bg-zinc-750 text-zinc-300 border border-zinc-700'
+            }`}
           >
             <span>{isSaving ? 'Securing & Activating...' : 'Save & Continue to Dashboard'}</span>
             <ArrowRight className="w-4 h-4" />

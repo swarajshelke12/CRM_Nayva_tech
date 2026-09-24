@@ -37,17 +37,16 @@ function normalizeMeeting(item: any, index: number): Meeting {
     time: item.time || (item.start?.dateTime ? new Date(item.start.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Upcoming'),
     platform: (item.platform === 'Zoom' || item.platform === 'Microsoft Teams') ? item.platform : 'Google Meet',
     status: item.status === 'Prepared' ? 'Prepared' : item.status === 'In Progress' ? 'In Progress' : 'Scheduled',
-    brief: item.brief ? {
-      summary: item.brief.summary || 'Strategic meeting objective synthesized by AI.',
-      emailSummary: item.brief.emailSummary || 'Email thread distilled.',
-      linkedinInsights: item.brief.linkedinInsights || 'Career and company insights.',
-      talkingPoints: Array.isArray(item.brief.talkingPoints) ? item.brief.talkingPoints : ['Review key priorities', 'Align on timeline']
-    } : item.talkingPoints ? {
-      summary: item.summary || 'Executive briefing synthesized by AI pipeline.',
-      emailSummary: item.emailSummary || 'Recent communications analyzed.',
-      linkedinInsights: item.linkedinInsights || 'Public profile insights extracted.',
-      talkingPoints: Array.isArray(item.talkingPoints) ? item.talkingPoints : ['Discuss strategic partnership', 'Review objectives']
-    } : undefined
+    brief: (() => {
+      const b = item.brief || (item.talkingPoints ? item : null);
+      if (!b) return undefined;
+      return {
+        summary: b.summary || 'Strategic meeting objective synthesized by AI.',
+        emailSummary: b.emailSummary || 'Email thread distilled.',
+        linkedinInsights: b.linkedinInsights || 'Career and company insights.',
+        talkingPoints: Array.isArray(b.talkingPoints) ? b.talkingPoints : ['Review key priorities', 'Align on timeline'],
+      };
+    })()
   };
 }
 

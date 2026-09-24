@@ -23,11 +23,8 @@ import {
 
 function formatRemainingTime(ms: number): string {
   if (ms <= 0) return '00h 00m 00s';
-  const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
+  const t = new Date(ms).toISOString().slice(11, 19).split(':');
+  return `${t[0]}h ${t[1]}m ${t[2]}s`;
 }
 
 export type FieldKey =
@@ -369,42 +366,7 @@ export const ConnectionsView: React.FC = () => {
     setCurrentScreen('dashboard');
   };
 
-  const handleTestWhatsApp = async () => {
-    const bizErr = validateSingleField('whatsAppBusinessId', form.whatsAppBusinessId);
-    const tokenErr = validateSingleField('whatsAppAccessToken', form.whatsAppAccessToken);
-
-    if (bizErr || tokenErr) {
-      showToast('Please enter a valid WhatsApp Phone Number ID and Access Token before testing.', 'error');
-      setErrors((prev) => ({
-        ...prev,
-        whatsAppBusinessId: bizErr,
-        whatsAppAccessToken: tokenErr
-      }));
-      setTouched((prev) => ({ ...prev, whatsAppBusinessId: true, whatsAppAccessToken: true }));
-      return;
-    }
-
-    if (!form.whatsAppRecipientPhone?.trim()) {
-      showToast('Please enter your recipient WhatsApp phone number (with country code) below.', 'info');
-      setErrors((prev) => ({
-        ...prev,
-        whatsAppRecipientPhone: 'Enter recipient WhatsApp phone number (e.g. 919876543210).'
-      }));
-      setTouched((prev) => ({ ...prev, whatsAppRecipientPhone: true }));
-      return;
-    }
-
-    setIsTestingWhatsApp(true);
-    await testWhatsAppAlert(
-      form.whatsAppRecipientPhone,
-      undefined,
-      form.whatsAppBusinessId,
-      form.whatsAppAccessToken
-    );
-    setIsTestingWhatsApp(false);
-  };
-
-  const handleTestTemplateWhatsApp = async () => {
+  const handleTestWhatsApp = async (sendTemplate = false) => {
     const bizErr = validateSingleField('whatsAppBusinessId', form.whatsAppBusinessId);
     const tokenErr = validateSingleField('whatsAppAccessToken', form.whatsAppAccessToken);
 
@@ -435,7 +397,7 @@ export const ConnectionsView: React.FC = () => {
       undefined,
       form.whatsAppBusinessId,
       form.whatsAppAccessToken,
-      true // send template
+      sendTemplate
     );
     setIsTestingWhatsApp(false);
   };
@@ -700,7 +662,7 @@ export const ConnectionsView: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
             <button
               type="button"
-              onClick={handleTestWhatsApp}
+              onClick={() => handleTestWhatsApp()}
               disabled={isTestingWhatsApp}
               className="py-1.5 px-2.5 rounded-lg bg-green-950/40 hover:bg-green-900/40 text-green-300 text-xs font-medium border border-green-800/40 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
               title="Test Meta Cloud API briefing text delivery"
@@ -710,7 +672,7 @@ export const ConnectionsView: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={handleTestTemplateWhatsApp}
+              onClick={() => handleTestWhatsApp(true)}
               disabled={isTestingWhatsApp}
               className="py-1.5 px-2.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/40 text-emerald-300 text-xs font-medium border border-emerald-800/40 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
               title="Send Meta pre-approved hello_world template (bypasses 24h window)"

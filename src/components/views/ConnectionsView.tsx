@@ -376,7 +376,48 @@ export const ConnectionsView: React.FC = () => {
     }
 
     setIsTestingWhatsApp(true);
-    await testWhatsAppAlert(form.whatsAppRecipientPhone);
+    await testWhatsAppAlert(
+      form.whatsAppRecipientPhone,
+      undefined,
+      form.whatsAppBusinessId,
+      form.whatsAppAccessToken
+    );
+    setIsTestingWhatsApp(false);
+  };
+
+  const handleTestTemplateWhatsApp = async () => {
+    const bizErr = validateSingleField('whatsAppBusinessId', form.whatsAppBusinessId);
+    const tokenErr = validateSingleField('whatsAppAccessToken', form.whatsAppAccessToken);
+
+    if (bizErr || tokenErr) {
+      showToast('Please enter a valid WhatsApp Phone Number ID and Access Token before testing.', 'error');
+      setErrors((prev) => ({
+        ...prev,
+        whatsAppBusinessId: bizErr,
+        whatsAppAccessToken: tokenErr
+      }));
+      setTouched((prev) => ({ ...prev, whatsAppBusinessId: true, whatsAppAccessToken: true }));
+      return;
+    }
+
+    if (!form.whatsAppRecipientPhone?.trim()) {
+      showToast('Please enter your recipient WhatsApp phone number (with country code) below.', 'info');
+      setErrors((prev) => ({
+        ...prev,
+        whatsAppRecipientPhone: 'Enter recipient WhatsApp phone number (e.g. 919876543210).'
+      }));
+      setTouched((prev) => ({ ...prev, whatsAppRecipientPhone: true }));
+      return;
+    }
+
+    setIsTestingWhatsApp(true);
+    await testWhatsAppAlert(
+      form.whatsAppRecipientPhone,
+      undefined,
+      form.whatsAppBusinessId,
+      form.whatsAppAccessToken,
+      true // send template
+    );
     setIsTestingWhatsApp(false);
   };
 
@@ -637,26 +678,42 @@ export const ConnectionsView: React.FC = () => {
             required={false}
           />
 
-          <div className="flex items-center gap-2 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
             <button
               type="button"
               onClick={handleTestWhatsApp}
               disabled={isTestingWhatsApp}
-              className="flex-1 py-1.5 px-3 rounded-lg bg-green-950/40 hover:bg-green-900/40 text-green-300 text-xs font-medium border border-green-800/40 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
-              title="Test Meta Cloud API delivery to your WhatsApp"
+              className="py-1.5 px-2.5 rounded-lg bg-green-950/40 hover:bg-green-900/40 text-green-300 text-xs font-medium border border-green-800/40 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+              title="Test Meta Cloud API briefing text delivery"
             >
               <Send className="w-3 h-3 text-green-400" />
-              <span>{isTestingWhatsApp ? 'Dispatching...' : 'Test Meta API Dispatch'}</span>
+              <span>{isTestingWhatsApp ? 'Dispatching...' : 'Test AI Briefing'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleTestTemplateWhatsApp}
+              disabled={isTestingWhatsApp}
+              className="py-1.5 px-2.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/40 text-emerald-300 text-xs font-medium border border-emerald-800/40 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+              title="Send Meta pre-approved hello_world template (bypasses 24h window)"
+            >
+              <MessageSquare className="w-3 h-3 text-emerald-400" />
+              <span>Test Template</span>
             </button>
             <button
               type="button"
               onClick={handleDirectWhatsAppTest}
-              className="py-1.5 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition-colors flex items-center justify-center gap-1"
-              title="Open test message in WhatsApp Web / App"
+              className="py-1.5 px-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition-colors flex items-center justify-center gap-1"
+              title="Open test message directly in WhatsApp Web / App"
             >
-              <ExternalLink className="w-3 h-3 text-emerald-400" />
+              <ExternalLink className="w-3 h-3 text-zinc-400" />
               <span>WhatsApp Web</span>
             </button>
+          </div>
+
+          <div className="p-2.5 rounded-lg bg-zinc-950/60 border border-zinc-800/80 text-[11px] text-zinc-400 leading-snug space-y-1">
+            <div className="font-semibold text-zinc-300">💡 Why a message might not appear on your phone:</div>
+            <div>• <strong>24-Hour Rule:</strong> Send a quick message (e.g. <em>&quot;Hi&quot;</em>) from your phone to the test business number to open Meta&apos;s 24h customer window for AI text.</div>
+            <div>• <strong>Template Test:</strong> Click <strong>&quot;Test Template&quot;</strong> above to send Meta&apos;s pre-approved <em>hello_world</em> template instantly.</div>
           </div>
         </div>
       </div>

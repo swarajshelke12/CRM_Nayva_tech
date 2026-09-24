@@ -65,7 +65,8 @@ export async function sendTestWhatsAppDispatch(
   phoneNumberId: string,
   accessToken: string,
   recipientPhone?: string,
-  messageText?: string
+  messageText?: string,
+  sendTemplate: boolean = false
 ): Promise<WebhookResponse> {
   const timestamp = new Date().toISOString();
   const cleanPhoneId = phoneNumberId ? phoneNumberId.replace(/\D/g, '') : '';
@@ -138,15 +139,29 @@ export async function sendTestWhatsAppDispatch(
       };
     }
 
-    const payload = {
-      messaging_product: 'whatsapp',
-      recipient_type: 'individual',
-      to: cleanRecipient,
-      type: 'text',
-      text: {
-        body: messageText || '🚀 *MeetPrep CRM Intelligence Briefing*\n\nYour AI-powered executive meeting preparation pipeline is verified and connected to WhatsApp Cloud API.'
-      }
-    };
+    // Build payload: If sendTemplate is true, send Meta's pre-approved 'hello_world' template
+    // which delivers even when outside the 24-hour conversation window.
+    const payload = sendTemplate
+      ? {
+          messaging_product: 'whatsapp',
+          to: cleanRecipient,
+          type: 'template',
+          template: {
+            name: 'hello_world',
+            language: {
+              code: 'en_US'
+            }
+          }
+        }
+      : {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: cleanRecipient,
+          type: 'text',
+          text: {
+            body: messageText || '🚀 *MeetPrep CRM Intelligence Briefing*\n\nYour AI-powered executive meeting preparation pipeline is verified and connected to WhatsApp Cloud API.'
+          }
+        };
 
     const response = await fetch(`https://graph.facebook.com/v21.0/${cleanPhoneId}/messages`, {
       method: 'POST',
@@ -166,7 +181,7 @@ export async function sendTestWhatsAppDispatch(
       if (metaErr?.code === 190) {
         errorDetail = 'Meta Access Token has expired or is invalid. Please generate a new token in Meta Business Manager.';
       } else if (metaErr?.code === 100) {
-        errorDetail = `Invalid Phone Number ID (${cleanPhoneId}). In Meta Developers, copy the "Phone number ID" under WhatsApp > API Setup.`;
+        errorDetail = `ID (${cleanPhoneId}) is a Business Account ID, not a Phone Number ID. In Meta Business Suite, click the "Phone numbers" tab (or in Meta Developers go to WhatsApp > API Setup) to get the Phone Number ID.`;
       } else if (metaErr?.code === 131030) {
         errorDetail = `Recipient +${cleanRecipient} has not been added to Meta Test Numbers. In Meta Dev Portal, add this phone under "To" test recipients.`;
       } else if (metaErr?.error_data?.details) {
@@ -180,9 +195,14 @@ export async function sendTestWhatsAppDispatch(
       };
     }
 
+    const messageId = result?.messages?.[0]?.id ? ` (ID: ${result.messages[0].id.slice(-8)})` : '';
+    const successMsg = sendTemplate
+      ? `✓ Meta template 'hello_world' delivered to WhatsApp +${cleanRecipient}${messageId}!`
+      : `✓ Meta accepted briefing for +${cleanRecipient}${messageId}! (Note: Send 'Hi' to your business number to open 24h window if text doesn't display).`;
+
     return {
       success: true,
-      message: `✓ Briefing successfully delivered to WhatsApp (+${cleanRecipient}) via Meta Cloud API!`,
+      message: successMsg,
       timestamp
     };
   } catch (err: any) {

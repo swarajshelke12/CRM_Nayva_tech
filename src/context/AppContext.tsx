@@ -86,11 +86,36 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentScreen, setCurrentScreen] = useState<Screen>('dashboard');
-  const [selectedMeetingId, setSelectedMeetingId] = useState<string>('');
-  const [meetings, setMeetings] = useState<Meeting[]>(initialMeetings);
+  const [meetings, setMeetings] = useState<Meeting[]>(() => {
+    try {
+      const saved = localStorage.getItem('meetprep_meetings');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return initialMeetings;
+  });
+  const [selectedMeetingId, setSelectedMeetingId] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('meetprep_meetings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed[0].id;
+      }
+    } catch {}
+    return '';
+  });
   const [justCompletedSetup, setJustCompletedSetup] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [toast, setToast] = useState<ToastNotification | null>(null);
+
+  useEffect(() => {
+    try {
+      if (meetings.length > 0) {
+        localStorage.setItem('meetprep_meetings', JSON.stringify(meetings));
+      } else {
+        localStorage.removeItem('meetprep_meetings');
+      }
+    } catch {}
+  }, [meetings]);
 
   // Initialize credentials from localStorage if available, applying auto-purge if >12h
   const [credentials, setCredentials] = useState<WorkflowCredentials>(() => {
@@ -190,7 +215,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (isComplete) {
       // Asynchronously dispatch to production n8n webhook if endpoint configured
-      await sendCredentialsToWebhook(newCreds);
+      const res = await sendCredentialsToWebhook(newCreds);
+      if (res.meetings && res.meetings.length > 0) {
+        setMeetings(res.meetings);
+        setSelectedMeetingId((prev) => prev || res.meetings![0].id);
+      }
     }
   };
 
@@ -198,6 +227,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsSyncing(true);
     const result = await triggerMeetingSync();
     setIsSyncing(false);
+    if (result.meetings && result.meetings.length > 0) {
+      setMeetings(result.meetings);
+      setSelectedMeetingId((prev) => prev || result.meetings![0].id);
+    }
     setWorkflowStatus((prev) => ({
       ...prev,
       lastRunAt: 'Just now',
@@ -243,6 +276,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setMeetings([]);
     try {
       localStorage.removeItem('meetprep_credentials');
+      localStorage.removeItem('meetprep_meetings');
     } catch {}
     showToast('Credentials cleared for re-entry.', 'info');
   };

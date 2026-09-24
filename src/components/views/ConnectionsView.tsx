@@ -17,7 +17,8 @@ import {
   Send,
   ChevronDown,
   ChevronUp,
-  ExternalLink
+  ExternalLink,
+  Zap
 } from 'lucide-react';
 
 function formatRemainingTime(ms: number): string {
@@ -269,6 +270,24 @@ export const ConnectionsView: React.FC = () => {
   const [showAdvancedHelp, setShowAdvancedHelp] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isTestingWhatsApp, setIsTestingWhatsApp] = useState(false);
+  const [webhookUrl, setWebhookUrlState] = useState<string>(() => {
+    try {
+      return localStorage.getItem('meetprep_webhook_url') || (import.meta as any).env?.VITE_N8N_WEBHOOK_URL || '';
+    } catch {
+      return '';
+    }
+  });
+
+  const handleUpdateWebhookUrl = (url: string) => {
+    setWebhookUrlState(url);
+    try {
+      if (url.trim()) {
+        localStorage.setItem('meetprep_webhook_url', url.trim());
+      } else {
+        localStorage.removeItem('meetprep_webhook_url');
+      }
+    } catch {}
+  };
 
   useEffect(() => {
     setForm(credentials);
@@ -743,6 +762,41 @@ export const ConnectionsView: React.FC = () => {
             </p>
           </div>
         )}
+      </div>
+
+      {/* ── n8n Automation Engine Webhook (Production Bridge) ──────────────── */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-pink-950/50 border border-pink-900/50 flex items-center justify-center text-pink-400">
+              <Zap className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-zinc-100">n8n Automation Engine Webhook</h3>
+              <p className="text-[11px] text-zinc-500">Live webhook endpoint for calendar synchronization &amp; background triggers</p>
+            </div>
+          </div>
+          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+            webhookUrl.trim()
+              ? 'bg-emerald-950/70 border border-emerald-800/70 text-emerald-400'
+              : 'bg-zinc-800 text-zinc-400'
+          }`}>
+            {webhookUrl.trim() ? '🟢 Linked to n8n' : 'Standalone / Vault Mode'}
+          </span>
+        </div>
+
+        <SimpleField
+          label="n8n Production Webhook URL"
+          value={webhookUrl}
+          onChange={handleUpdateWebhookUrl}
+          placeholder="https://n8n.yourcompany.com/webhook/meetprep-production"
+          hint="Optional"
+          isPassword={false}
+          required={false}
+        />
+        <div className="p-2.5 rounded-lg bg-zinc-950/60 border border-zinc-800/80 text-[11px] text-zinc-400 leading-snug">
+          When configured, calendar syncs, briefing generations, and credentials submissions connect directly to your live n8n pipeline.
+        </div>
       </div>
 
       {/* ── Primary Action Bar ──────────────────────────────────────────────── */}

@@ -1,12 +1,68 @@
-import type { WorkflowCredentials } from '../types';
+import type { WorkflowCredentials, Meeting } from '../types';
 
-const WEBHOOK_URL = (import.meta as any).env?.VITE_N8N_WEBHOOK_URL || '';
-const AUTH_HEADER = (import.meta as any).env?.VITE_N8N_AUTH_HEADER || '';
+export const getWebhookUrl = (): string => {
+  try {
+    const custom = localStorage.getItem('meetprep_webhook_url');
+    if (custom && custom.trim()) return custom.trim();
+  } catch {}
+  return (import.meta as any).env?.VITE_N8N_WEBHOOK_URL || '';
+};
+
+export const getAuthHeader = (): string => {
+  try {
+    const custom = localStorage.getItem('meetprep_webhook_auth');
+    if (custom && custom.trim()) return custom.trim();
+  } catch {}
+  return (import.meta as any).env?.VITE_N8N_AUTH_HEADER || '';
+};
 
 export interface WebhookResponse {
   success: boolean;
   message: string;
   timestamp: string;
+  meetings?: Meeting[];
+}
+
+function normalizeMeeting(item: any, index: number): Meeting {
+  return {
+    id: String(item.id || item._id || `meeting-${Date.now()}-${index}`),
+    title: item.title || item.summary || item.meetingName || 'Scheduled Meeting',
+    attendeeName: item.attendeeName || item.name || (item.attendees?.[0]?.displayName || item.attendees?.[0]?.email || 'Attendee'),
+    attendeeRole: item.attendeeRole || item.role || 'Executive',
+    attendeeCompany: item.attendeeCompany || item.company || 'Enterprise Partner',
+    attendeeEmail: item.attendeeEmail || item.email || (item.attendees?.[0]?.email || ''),
+    attendeeAvatar: item.attendeeAvatar || item.avatar || '',
+    attendeeLinkedIn: item.attendeeLinkedIn || item.linkedin || '',
+    date: item.date || (item.start?.dateTime ? new Date(item.start.dateTime).toLocaleDateString() : 'Today'),
+    time: item.time || (item.start?.dateTime ? new Date(item.start.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Upcoming'),
+    platform: (item.platform === 'Zoom' || item.platform === 'Microsoft Teams') ? item.platform : 'Google Meet',
+    status: item.status === 'Prepared' ? 'Prepared' : item.status === 'In Progress' ? 'In Progress' : 'Scheduled',
+    brief: item.brief ? {
+      summary: item.brief.summary || 'Strategic meeting objective synthesized by AI.',
+      emailSummary: item.brief.emailSummary || 'Email thread distilled.',
+      linkedinInsights: item.brief.linkedinInsights || 'Career and company insights.',
+      talkingPoints: Array.isArray(item.brief.talkingPoints) ? item.brief.talkingPoints : ['Review key priorities', 'Align on timeline']
+    } : item.talkingPoints ? {
+      summary: item.summary || 'Executive briefing synthesized by AI pipeline.',
+      emailSummary: item.emailSummary || 'Recent communications analyzed.',
+      linkedinInsights: item.linkedinInsights || 'Public profile insights extracted.',
+      talkingPoints: Array.isArray(item.talkingPoints) ? item.talkingPoints : ['Discuss strategic partnership', 'Review objectives']
+    } : undefined
+  };
+}
+
+function extractMeetingsFromData(data: any): Meeting[] | undefined {
+  if (!data) return undefined;
+  let rawList: any[] | null = null;
+  if (Array.isArray(data)) rawList = data;
+  else if (Array.isArray(data.meetings)) rawList = data.meetings;
+  else if (Array.isArray(data.data)) rawList = data.data;
+  else if (Array.isArray(data.items)) rawList = data.items;
+
+  if (rawList && rawList.length > 0) {
+    return rawList.map((m, idx) => normalizeMeeting(m, idx));
+  }
+  return undefined;
 }
 
 /**
@@ -15,8 +71,10 @@ export interface WebhookResponse {
  */
 export async function sendCredentialsToWebhook(credentials: WorkflowCredentials): Promise<WebhookResponse> {
   const timestamp = new Date().toISOString();
+  const webhookUrl = getWebhookUrl();
+  const authHeader = getAuthHeader();
 
-  if (!WEBHOOK_URL) {
+  if (!webhookUrl) {
     return {
       success: true,
       message: 'Credentials encrypted in 12-hour client vault.',
@@ -25,11 +83,11 @@ export async function sendCredentialsToWebhook(credentials: WorkflowCredentials)
   }
 
   try {
-    const response = await fetch(WEBHOOK_URL, {
+    const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(AUTH_HEADER ? { Authorization: AUTH_HEADER } : {})
+        ...(authHeader ? { Authorization: authHeader } : {})
       },
       body: JSON.stringify({
         event: 'credentials_submitted',
@@ -43,10 +101,16 @@ export async function sendCredentialsToWebhook(credentials: WorkflowCredentials)
       throw new Error(`Webhook responded with status ${response.status}`);
     }
 
+    const data = await response.json().catch(() => null);
+    const meetings = extractMeetingsFromData(data);
+
     return {
       success: true,
-      message: 'Successfully linked credentials to production n8n automation engine.',
-      timestamp
+      message: meetings && meetings.length > 0
+        ? `✓ Linked to n8n automation engine! Loaded ${meetings.length} meeting dossier(s).`
+        : 'Successfully linked credentials to production n8n automation engine.',
+      timestamp,
+      meetings
     };
   } catch (err: any) {
     console.warn('n8n Webhook handover notice:', err?.message || err);
@@ -89,14 +153,17 @@ export async function sendTestWhatsAppDispatch(
     };
   }
 
-  // If n8n webhook URL is provided in .env, dispatch via n8n automation engine
-  if (WEBHOOK_URL) {
+  // If n8n webhook URL is provided in .env or settings, dispatch via n8n automation engine
+  const webhookUrl = getWebhookUrl();
+  const authHeader = getAuthHeader();
+
+  if (webhookUrl) {
     try {
-      const response = await fetch(WEBHOOK_URL, {
+      const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(AUTH_HEADER ? { Authorization: AUTH_HEADER } : {})
+          ...(authHeader ? { Authorization: authHeader } : {})
         },
         body: JSON.stringify({
           event: 'test_whatsapp_dispatch',
@@ -104,6 +171,7 @@ export async function sendTestWhatsAppDispatch(
           accessToken: token,
           recipientPhone: cleanRecipient,
           message: messageText || '🚀 MeetPrep CRM Test Dispatch: AI Meeting Prep WhatsApp pipeline is active!',
+          sendTemplate,
           timestamp,
         })
       });
@@ -219,8 +287,10 @@ export async function sendTestWhatsAppDispatch(
  */
 export async function triggerMeetingSync(): Promise<WebhookResponse> {
   const timestamp = new Date().toISOString();
+  const webhookUrl = getWebhookUrl();
+  const authHeader = getAuthHeader();
 
-  if (!WEBHOOK_URL) {
+  if (!webhookUrl) {
     await new Promise((res) => setTimeout(res, 600));
     return {
       success: true,
@@ -230,11 +300,11 @@ export async function triggerMeetingSync(): Promise<WebhookResponse> {
   }
 
   try {
-    const response = await fetch(WEBHOOK_URL, {
+    const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(AUTH_HEADER ? { Authorization: AUTH_HEADER } : {})
+        ...(authHeader ? { Authorization: authHeader } : {})
       },
       body: JSON.stringify({
         event: 'manual_calendar_sync',
@@ -243,18 +313,25 @@ export async function triggerMeetingSync(): Promise<WebhookResponse> {
     });
 
     if (!response.ok) {
-      throw new Error(`Sync responded with status ${response.status}`);
+      const errJson = await response.json().catch(() => null);
+      throw new Error(errJson?.message || `Sync responded with status ${response.status}`);
     }
+
+    const data = await response.json().catch(() => null);
+    const meetings = extractMeetingsFromData(data);
 
     return {
       success: true,
-      message: 'Google Calendar synchronized via n8n background engine.',
-      timestamp
+      message: meetings && meetings.length > 0
+        ? `✓ Google Calendar synchronized! Loaded ${meetings.length} upcoming session(s).`
+        : 'Google Calendar synchronized via n8n background engine.',
+      timestamp,
+      meetings
     };
-  } catch {
+  } catch (err: any) {
     return {
-      success: true,
-      message: 'Calendar verified. All scheduled meetings loaded.',
+      success: false,
+      message: `Sync Error: ${err?.message || 'Failed to sync with n8n.'}`,
       timestamp
     };
   }

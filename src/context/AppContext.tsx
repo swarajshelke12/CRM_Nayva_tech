@@ -98,10 +98,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const saved = localStorage.getItem('meetprep_credentials');
       if (saved) {
         const parsed = JSON.parse(saved) as WorkflowCredentials;
-        if (parsed.googleClientId?.includes('847293610584')) {
-          localStorage.removeItem('meetprep_credentials');
-          return initialCredentials;
-        }
         return sanitizeCredentialsIfExpired(parsed);
       }
     } catch {
@@ -240,6 +236,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       linkedInCookie: '',
       whatsAppBusinessId: '',
       whatsAppAccessToken: '',
+      whatsAppRecipientPhone: '',
       status: 'Not Configured',
     };
     setCredentials(blankCreds);

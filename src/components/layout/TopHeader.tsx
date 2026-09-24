@@ -34,7 +34,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onOpenMobile }) => {
       default:
         return {
           title: 'MeetPrep CRM',
-          subtitle: 'Navya Tech Solutions'
+          subtitle: 'Novatic Industries'
         };
     }
   };
@@ -97,7 +97,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onOpenMobile }) => {
             rel="noopener noreferrer"
             className="text-zinc-300 hover:text-white font-medium transition-colors"
           >
-            Navya Tech
+            Novatic Industries
           </a>
         </div>
       </div>

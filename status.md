@@ -2,7 +2,7 @@
 
 **Last Updated**: September 23, 2026  
 **Project**: MeetPrep CRM (MeetingOS)  
-**Owner**: Navya Tech Solutions  
+**Owner**: Novatic Industries  
 **Status**: Production-ready client delivery portal
 
 ---
@@ -410,7 +410,7 @@ EXPOSE 80
 
 ## Contact & Support
 
-- **Client**: Navya Tech Solutions
+- **Developer / Company**: Novatic Industries
 - **Website**: https://www.navyatech.co.in/
 - **Email**: contact@navyatech.co.in
 - **GitHub**: https://github.com/swarajshelke12/CRM_Nayva_tech

@@ -70,7 +70,7 @@ const MainLayout: React.FC = () => {
               <span>·</span>
               <span className="text-zinc-400">Production AI Meeting Intelligence</span>
               <span>·</span>
-              <span>Navya Tech Solutions</span>
+              <span>Novatic Industries</span>
             </div>
 
             <div className="flex items-center gap-4 text-[11px]">

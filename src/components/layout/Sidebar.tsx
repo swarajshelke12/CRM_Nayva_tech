@@ -61,7 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
                   Client
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-500 font-medium">Navya Tech Solutions</p>
+              <p className="text-[11px] text-zinc-500 font-medium">Novatic Industries</p>
             </div>
           </div>
 
@@ -75,15 +75,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
 
         {/* Agency Backing Sub-banner */}
         <div className="px-3.5 py-2 mx-3 mt-3 rounded-lg bg-zinc-900 border border-zinc-850 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[11px] text-zinc-300">AI Automation</span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <span className="text-[11px] text-zinc-300 truncate">AI automation by Novatic Industries</span>
           </div>
           <a
             href="https://www.navyatech.co.in/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[11px] text-zinc-400 hover:text-zinc-200 flex items-center gap-0.5 transition-colors"
+            className="text-[11px] text-zinc-400 hover:text-zinc-200 flex items-center gap-0.5 transition-colors shrink-0 ml-1.5"
           >
             <span>Agency</span>
             <ExternalLink className="w-3 h-3" />
@@ -135,11 +135,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
         <div className="p-3.5 border-t border-zinc-800/80 bg-zinc-900/50">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-semibold text-zinc-300">
-              SS
+              NI
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-zinc-200 truncate">Swaraj Shelke</p>
-              <p className="text-[11px] text-zinc-500 truncate">Navya Tech Solutions</p>
+              <p className="text-xs font-medium text-zinc-200 truncate">Executive Client</p>
+              <p className="text-[11px] text-zinc-500 truncate">Novatic Industries</p>
             </div>
           </div>
         </div>

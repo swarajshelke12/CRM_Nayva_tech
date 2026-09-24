@@ -18,7 +18,7 @@
 [![License](https://img.shields.io/badge/License-Proprietary-8B5CF6?style=flat-square)](https://www.navyatech.co.in/)
 
 <p align="center">
-  <strong>Client Automation Portal engineered by <a href="https://www.navyatech.co.in/">Navya Tech Solutions</a></strong>
+  <strong>Client Automation Portal engineered by <a href="https://www.navyatech.co.in/">Novatic Industries</a></strong>
 </p>
 
 <p align="center">
@@ -194,7 +194,7 @@ The portal adheres to a **Zero-Knowledge, Ephemeral Credential Lifecycle** speci
           ├───────────────────────────────┐
           │ (Within 24 Hours)             │ (After 24 Hours)
           ▼                               ▼
-[ Navya Tech Configures n8n ]   [ Automatic Permanent Memory Purge ]
+[ Novatic Industries Configures n8n ]   [ Automatic Permanent Memory Purge ]
                                           │
                                           ▼
                                 [ Keys Irretrievably Erased ]
@@ -203,7 +203,7 @@ The portal adheres to a **Zero-Knowledge, Ephemeral Credential Lifecycle** speci
 ### Security Tenets
 
 1. **Zero Database Footprint**: Credentials are never sent to or stored in a persistent backend database.
-2. **12-Hour Ephemeral Purge**: Submitted keys are permanently wiped from browser memory and storage after 12 hours. Once purged, neither the client nor Navya Tech can inspect previous keys.
+2. **12-Hour Ephemeral Purge**: Submitted keys are permanently wiped from browser memory and storage after 12 hours. Once purged, neither the client nor Novatic Industries can inspect previous keys.
 3. **Hidden by Default**: After submission, values are masked with an OpenAI/Gemini-style security guard. An explicit "Unlock & View" action is required to inspect them.
 4. **Client-Side Validation & Entropy Checks**:
    All credential fields enforce strict format, length, and prefix constraints before allowing submission:
@@ -225,7 +225,7 @@ The portal adheres to a **Zero-Knowledge, Ephemeral Credential Lifecycle** speci
 
 ## ⚡ n8n Automation Engine Integration
 
-The repository includes the production n8n workflow JSON used by Navya Tech Solutions:
+The repository includes the production n8n workflow JSON used by Novatic Industries:
 
 ```
 actual_workflow/
@@ -465,9 +465,9 @@ CMD ["nginx", "-g", "daemon off;"]
 
 ---
 
-## 🏢 About Navya Tech Solutions
+## 🏢 About Novatic Industries
 
-**Navya Tech Solutions** is a premier AI automation agency specializing in bespoke workflow automation, AI agents, and enterprise process optimization.
+**Novatic Industries** is a premier AI automation company specializing in bespoke workflow automation, AI agents, and enterprise process optimization.
 
 - **Website**: [https://www.navyatech.co.in/](https://www.navyatech.co.in/)
 - **Services**: Custom n8n workflows, generative AI integrations, CRM intelligence pipelines, and B2B automation portals.
@@ -477,9 +477,9 @@ CMD ["nginx", "-g", "daemon off;"]
 
 ## 📄 License & Copyright
 
-© 2024–2026 **Navya Tech Solutions**. All rights reserved.  
+© 2024–2026 **Novatic Industries**. All rights reserved.  
 Unauthorized distribution, copying, or modification of proprietary workflows and designs is strictly prohibited.
 
 <div align="center">
-  <sub>Built with precision by <a href="https://www.navyatech.co.in/">Navya Tech Solutions</a></sub>
+  <sub>Built with precision by <a href="https://www.navyatech.co.in/">Novatic Industries</a></sub>
 </div>

@@ -70,7 +70,7 @@ interface AppContextType {
   dismissCompletedSetupNotice: () => void;
   isSyncing: boolean;
   syncCalendar: () => Promise<void>;
-  testWhatsAppAlert: () => Promise<WebhookResponse>;
+  testWhatsAppAlert: (recipientPhoneOverride?: string, messageOverride?: string) => Promise<WebhookResponse>;
   toast: ToastNotification | null;
   showToast: (message: string, type?: 'success' | 'info' | 'error') => void;
   dismissToast: () => void;
@@ -203,10 +203,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast(result.message, result.success ? 'success' : 'info');
   };
 
-  const testWhatsAppAlert = async (): Promise<WebhookResponse> => {
+  const testWhatsAppAlert = async (
+    recipientPhoneOverride?: string,
+    messageOverride?: string
+  ): Promise<WebhookResponse> => {
+    const phone = recipientPhoneOverride || credentials.whatsAppRecipientPhone;
     const res = await sendTestWhatsAppDispatch(
       credentials.whatsAppBusinessId,
-      credentials.whatsAppAccessToken
+      credentials.whatsAppAccessToken,
+      phone,
+      messageOverride
     );
     showToast(res.message, res.success ? 'success' : 'error');
     return res;

@@ -31,19 +31,43 @@ const LinkedInIcon: React.FC<{ className?: string }> = ({ className = "w-4 h-4" 
 );
 
 export const MeetingPrepView: React.FC = () => {
-  const { meetings, selectedMeetingId, setSelectedMeetingId, setCurrentScreen, showToast } = useApp();
+  const { meetings, selectedMeetingId, setSelectedMeetingId, setCurrentScreen, showToast, credentials, testWhatsAppAlert } = useApp();
   const [copied, setCopied] = useState(false);
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
 
   const currentMeeting = meetings.find(m => m.id === selectedMeetingId) ?? meetings[0];
   const brief = currentMeeting?.brief;
 
+  const formatBriefForWhatsApp = () => {
+    if (!brief || !currentMeeting) return '';
+    return `🎯 *Executive Meeting Brief: ${currentMeeting.attendeeName}*\n🏢 *Company:* ${currentMeeting.attendeeCompany} (${currentMeeting.attendeeRole})\n⏰ *Time:* ${currentMeeting.date} at ${currentMeeting.time}\n\n📌 *Objective & Overview:*\n${brief.summary}\n\n📧 *Email Context:*\n${brief.emailSummary}\n\n💼 *LinkedIn Insights:*\n${brief.linkedinInsights}\n\n💡 *Talking Points:*\n${brief.talkingPoints.map((tp, i) => `${i + 1}. ${tp}`).join('\n')}\n\n— _MeetPrep CRM by Navya Tech Solutions_`;
+  };
+
   const handleSendToWhatsApp = async () => {
     if (!brief || !currentMeeting) return;
+    const formattedText = formatBriefForWhatsApp();
+
+    if (!credentials.whatsAppBusinessId || !credentials.whatsAppAccessToken) {
+      // Direct WhatsApp share fallback if API credentials not set
+      const url = `https://wa.me/?text=${encodeURIComponent(formattedText)}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      showToast('Opened briefing in WhatsApp Web / App', 'info');
+      return;
+    }
+
     setIsSendingWhatsApp(true);
-    await new Promise(r => setTimeout(r, 600));
+    await testWhatsAppAlert(credentials.whatsAppRecipientPhone, formattedText);
     setIsSendingWhatsApp(false);
-    showToast(`✓ Briefing for ${currentMeeting.attendeeName} dispatched to WhatsApp!`, 'success');
+  };
+
+  const handleOpenDirectWhatsApp = () => {
+    if (!brief || !currentMeeting) return;
+    const formattedText = formatBriefForWhatsApp();
+    const recipient = credentials.whatsAppRecipientPhone ? credentials.whatsAppRecipientPhone.replace(/\D/g, '') : '';
+    const url = recipient
+      ? `https://wa.me/${recipient}?text=${encodeURIComponent(formattedText)}`
+      : `https://wa.me/?text=${encodeURIComponent(formattedText)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handleCopy = () => {
@@ -193,24 +217,33 @@ export const MeetingPrepView: React.FC = () => {
                 {currentMeeting.platform}
               </span>
               {brief && (
-                <>
+                <div className="flex items-center gap-1.5 flex-wrap justify-end">
                   <button
                     onClick={handleSendToWhatsApp}
                     disabled={isSendingWhatsApp}
                     className="px-2.5 py-1 rounded bg-green-950/60 hover:bg-green-900/60 text-green-300 text-xs font-medium border border-green-800/60 transition-colors flex items-center gap-1.5 disabled:opacity-50"
-                    title="Push this brief directly to your WhatsApp"
+                    title="Push this brief directly via Meta WhatsApp API"
                   >
                     <MessageSquare className="w-3 h-3 text-green-400" />
-                    <span>{isSendingWhatsApp ? 'Sending...' : 'Send to WhatsApp'}</span>
+                    <span>{isSendingWhatsApp ? 'Dispatching...' : 'Send to WhatsApp'}</span>
+                  </button>
+                  <button
+                    onClick={handleOpenDirectWhatsApp}
+                    className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition-colors flex items-center gap-1"
+                    title="Open directly in WhatsApp Web or Mobile App"
+                  >
+                    <ExternalLink className="w-3 h-3 text-emerald-400" />
+                    <span>Open in Web</span>
                   </button>
                   <button
                     onClick={handleCopy}
                     className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition-colors flex items-center gap-1"
+                    title="Copy full executive dossier to clipboard"
                   >
                     {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    <span>{copied ? 'Copied' : 'Copy Brief'}</span>
+                    <span>{copied ? 'Copied' : 'Copy'}</span>
                   </button>
-                </>
+                </div>
               )}
             </div>
           </div>

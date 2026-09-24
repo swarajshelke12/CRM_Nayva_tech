@@ -16,7 +16,8 @@ import {
   RotateCcw,
   Send,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  ExternalLink
 } from 'lucide-react';
 
 function formatRemainingTime(ms: number): string {
@@ -35,7 +36,8 @@ export type FieldKey =
   | 'apifyApiKey'
   | 'linkedInCookie'
   | 'whatsAppBusinessId'
-  | 'whatsAppAccessToken';
+  | 'whatsAppAccessToken'
+  | 'whatsAppRecipientPhone';
 
 export type FieldErrors = Partial<Record<FieldKey, string>>;
 
@@ -72,9 +74,9 @@ export function validateSingleField(field: FieldKey, rawValue: string | undefine
       return undefined;
 
     case 'whatsAppBusinessId':
-      if (!val) return 'This field is remaining: Enter your Meta WhatsApp Business ID.';
-      if (!/^\d{10,20}$/.test(val)) {
-        return 'Invalid format: Must be a numeric Meta Business Account ID (10 to 20 digits).';
+      if (!val) return 'This field is remaining: Enter your Meta Phone Number ID.';
+      if (!/^\d{10,20}$/.test(val.replace(/\D/g, ''))) {
+        return 'Invalid format: Must be the 10-20 digit numeric Phone Number ID from Meta Dev Portal.';
       }
       return undefined;
 
@@ -82,6 +84,12 @@ export function validateSingleField(field: FieldKey, rawValue: string | undefine
       if (!val) return 'This field is remaining: Enter your WhatsApp Access Token.';
       if (!val.startsWith('EAA') || val.length < 25) {
         return 'Invalid format: Meta Access Token must start with "EAA..." (min 25 chars).';
+      }
+      return undefined;
+
+    case 'whatsAppRecipientPhone':
+      if (val && !/^\+?\d{8,16}$/.test(val.replace(/[\s()-]/g, ''))) {
+        return 'Invalid format: Must include country code (e.g. 919876543210 or +12345678900).';
       }
       return undefined;
 
@@ -129,6 +137,14 @@ export function validateAllFields(form: WorkflowCredentials): {
       }
     }
   });
+
+  if (form.whatsAppRecipientPhone?.trim()) {
+    const err = validateSingleField('whatsAppRecipientPhone', form.whatsAppRecipientPhone);
+    if (err) {
+      errors.whatsAppRecipientPhone = err;
+      formatErrorCount++;
+    }
+  }
 
   if (form.linkedInCookie?.trim()) {
     const err = validateSingleField('linkedInCookie', form.linkedInCookie);
@@ -339,7 +355,7 @@ export const ConnectionsView: React.FC = () => {
     const tokenErr = validateSingleField('whatsAppAccessToken', form.whatsAppAccessToken);
 
     if (bizErr || tokenErr) {
-      showToast('Please enter a valid WhatsApp Business ID and Access Token before testing.', 'error');
+      showToast('Please enter a valid WhatsApp Phone Number ID and Access Token before testing.', 'error');
       setErrors((prev) => ({
         ...prev,
         whatsAppBusinessId: bizErr,
@@ -349,8 +365,18 @@ export const ConnectionsView: React.FC = () => {
       return;
     }
 
+    if (!form.whatsAppRecipientPhone?.trim()) {
+      showToast('Please enter your recipient WhatsApp phone number (with country code) below.', 'info');
+      setErrors((prev) => ({
+        ...prev,
+        whatsAppRecipientPhone: 'Enter recipient WhatsApp phone number (e.g. 919876543210).'
+      }));
+      setTouched((prev) => ({ ...prev, whatsAppRecipientPhone: true }));
+      return;
+    }
+
     setIsTestingWhatsApp(true);
-    await testWhatsAppAlert();
+    await testWhatsAppAlert(form.whatsAppRecipientPhone);
     setIsTestingWhatsApp(false);
   };
 
@@ -359,6 +385,15 @@ export const ConnectionsView: React.FC = () => {
     setErrors({});
     setTouched({});
     setHasAttemptedSubmit(false);
+  };
+
+  const handleDirectWhatsAppTest = () => {
+    const text = `🚀 *MeetPrep CRM Direct WhatsApp Test*\n\nYour AI meeting preparation briefing portal is connected and ready.`;
+    const recipient = form.whatsAppRecipientPhone ? form.whatsAppRecipientPhone.replace(/\D/g, '') : '';
+    const url = recipient
+      ? `https://wa.me/${recipient}?text=${encodeURIComponent(text)}`
+      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -386,7 +421,7 @@ export const ConnectionsView: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-zinc-400">
-              Enter your integration keys. All fields will be strictly validated before locking into the 12-hour ephemeral vault.
+              Enter your integration keys. All fields are strictly verified before locking into the 12-hour ephemeral vault.
             </p>
           </div>
 
@@ -401,12 +436,12 @@ export const ConnectionsView: React.FC = () => {
           </div>
         </div>
 
-        {/* 12-Hour Ephemeral Privacy Assurance */}
+        {/* 12-Hour Ephemeral Privacy Assurance Banner */}
         <div className="mt-4 pt-3.5 border-t border-zinc-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-[11px] text-zinc-400">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
             <span>
-              <strong className="text-zinc-200">12-Hour Zero-Knowledge Vault:</strong> Keys are held in temporary memory and auto-purged every 12 hours. Zero permanent database storage.
+              <strong className="text-zinc-200">12-Hour Ephemeral Vault:</strong> Keys are held in temporary browser memory and auto-purged every 12 hours. Zero permanent database storage.
             </span>
           </div>
           {isConfigured && credentials.expiresAtTimestamp && (
@@ -554,7 +589,7 @@ export const ConnectionsView: React.FC = () => {
                 <MessageSquare className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-xs font-semibold text-zinc-100">WhatsApp Dispatch</h3>
+                <h3 className="text-xs font-semibold text-zinc-100">WhatsApp Cloud API</h3>
                 <p className="text-[11px] text-zinc-500">Delivers briefings 60m before every call</p>
               </div>
             </div>
@@ -570,13 +605,14 @@ export const ConnectionsView: React.FC = () => {
           </div>
 
           <SimpleField
-            label="WhatsApp Business ID"
+            label="WhatsApp Phone Number ID"
             value={form.whatsAppBusinessId}
             onChange={(val) => setField('whatsAppBusinessId', val)}
             onBlur={() => handleBlur('whatsAppBusinessId')}
             error={errors.whatsAppBusinessId}
             isValid={isWhatsAppValid || (Boolean(form.whatsAppBusinessId.trim()) && !errors.whatsAppBusinessId && !validateSingleField('whatsAppBusinessId', form.whatsAppBusinessId))}
-            placeholder="15-digit Meta Business ID"
+            placeholder="15-digit ID (e.g. 100609349424982)"
+            hint="From Meta Dev Portal"
             isPassword={false}
           />
           <SimpleField
@@ -588,16 +624,40 @@ export const ConnectionsView: React.FC = () => {
             isValid={isWhatsAppValid || (Boolean(form.whatsAppAccessToken.trim()) && !errors.whatsAppAccessToken && !validateSingleField('whatsAppAccessToken', form.whatsAppAccessToken))}
             placeholder="EAAxxxxxxxxxxxxxxxxxxxx"
           />
+          <SimpleField
+            label="Recipient WhatsApp Phone Number"
+            value={form.whatsAppRecipientPhone || ''}
+            onChange={(val) => setField('whatsAppRecipientPhone', val)}
+            onBlur={() => handleBlur('whatsAppRecipientPhone')}
+            error={errors.whatsAppRecipientPhone}
+            isValid={Boolean(form.whatsAppRecipientPhone?.trim()) && !errors.whatsAppRecipientPhone && !validateSingleField('whatsAppRecipientPhone', form.whatsAppRecipientPhone)}
+            placeholder="e.g. 919876543210 (with country code)"
+            hint="Where briefings are sent"
+            isPassword={false}
+            required={false}
+          />
 
-          <button
-            type="button"
-            onClick={handleTestWhatsApp}
-            disabled={isTestingWhatsApp}
-            className="w-full mt-2 py-1.5 px-3 rounded-lg bg-green-950/40 hover:bg-green-900/40 text-green-300 text-xs font-medium border border-green-800/40 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
-          >
-            <Send className="w-3 h-3 text-green-400" />
-            <span>{isTestingWhatsApp ? 'Dispatching Test Message...' : 'Send Test WhatsApp Briefing'}</span>
-          </button>
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              type="button"
+              onClick={handleTestWhatsApp}
+              disabled={isTestingWhatsApp}
+              className="flex-1 py-1.5 px-3 rounded-lg bg-green-950/40 hover:bg-green-900/40 text-green-300 text-xs font-medium border border-green-800/40 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+              title="Test Meta Cloud API delivery to your WhatsApp"
+            >
+              <Send className="w-3 h-3 text-green-400" />
+              <span>{isTestingWhatsApp ? 'Dispatching...' : 'Test Meta API Dispatch'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDirectWhatsAppTest}
+              className="py-1.5 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition-colors flex items-center justify-center gap-1"
+              title="Open test message in WhatsApp Web / App"
+            >
+              <ExternalLink className="w-3 h-3 text-emerald-400" />
+              <span>WhatsApp Web</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -609,17 +669,21 @@ export const ConnectionsView: React.FC = () => {
           className="w-full px-4 py-3 flex items-center justify-between text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
         >
           <span className="flex items-center gap-2">
-            <span>Where do I find these credentials?</span>
+            <span>Where do I find these credentials in Meta &amp; Google?</span>
           </span>
           {showAdvancedHelp ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
 
         {showAdvancedHelp && (
           <div className="p-4 pt-1 border-t border-zinc-800 text-xs text-zinc-400 space-y-2.5 leading-relaxed bg-zinc-950/80">
-            <p>• <strong>Google:</strong> In Google Cloud Console → APIs &amp; Services → Credentials → OAuth 2.0 Client ID (Gmail &amp; Calendar enabled).</p>
-            <p>• <strong>OpenAI:</strong> From your OpenAI Dashboard (<span className="text-zinc-300">platform.openai.com</span>) under API Keys.</p>
-            <p>• <strong>Apify:</strong> From Apify Console → Settings → Integrations.</p>
-            <p>• <strong>WhatsApp:</strong> From Meta Business Manager → System Users → Generate Token with WhatsApp permissions.</p>
+            <p>• <strong>Google OAuth:</strong> Google Cloud Console → APIs &amp; Services → Credentials → OAuth 2.0 Client ID (Enable Calendar &amp; Gmail scopes).</p>
+            <p>• <strong>OpenAI:</strong> From your OpenAI Dashboard (<span className="text-zinc-300 font-mono">platform.openai.com</span>) under API Keys (starts with <span className="font-mono text-zinc-300">sk-</span>).</p>
+            <p>• <strong>Apify:</strong> From Apify Console (<span className="text-zinc-300 font-mono">console.apify.com</span>) → Settings → Integrations (starts with <span className="font-mono text-zinc-300">apify_api_</span>).</p>
+            <p>• <strong>Meta WhatsApp Cloud API:</strong> Go to <span className="text-zinc-300 font-mono">developers.facebook.com</span> → Your App → <strong>WhatsApp → API Setup</strong>:
+              <br /><span className="text-zinc-300">1.</span> Copy the 15-digit <strong>Phone number ID</strong> (e.g. <span className="font-mono text-zinc-300">100609349424982</span>).
+              <br /><span className="text-zinc-300">2.</span> Copy the <strong>Temporary access token</strong> (or permanent System User token).
+              <br /><span className="text-zinc-300">3.</span> Under Step 2 ("To"), add your personal WhatsApp number to Meta's authorized test list if using developer sandbox mode.
+            </p>
           </div>
         )}
       </div>
@@ -628,7 +692,7 @@ export const ConnectionsView: React.FC = () => {
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs text-zinc-400">
           <Clock className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-          <span>Timeline: <strong>12-Hour Production Vault</strong></span>
+          <span>Timeline: <strong>12-Hour Production Ephemeral Vault</strong></span>
         </div>
 
         <div className="flex items-center gap-2.5 justify-end">
@@ -636,11 +700,11 @@ export const ConnectionsView: React.FC = () => {
             <button
               type="button"
               onClick={handleReset}
-              className="px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition-colors flex items-center gap-1.5"
-              title="Clear credentials to re-enter"
+              className="px-3 py-2 rounded-lg bg-red-950/40 hover:bg-red-900/40 text-red-300 text-xs font-medium border border-red-800/40 transition-colors flex items-center gap-1.5"
+              title="Purge all credentials immediately from temporary memory"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset</span>
+              <span>Purge &amp; Reset</span>
             </button>
           )}
 

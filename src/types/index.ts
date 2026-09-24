@@ -51,8 +51,9 @@ export interface WorkflowCredentials {
   linkedInCookie?: string;      // li_at session cookie from browser DevTools for Apify scraper
 
   // ── WhatsApp Business Cloud ────────────────────────────────────────────────
-  whatsAppBusinessId: string;   // Meta Business Account ID
+  whatsAppBusinessId: string;   // Meta WhatsApp Phone Number ID (or Business Account ID)
   whatsAppAccessToken: string;  // Permanent / long-lived access token from Meta
+  whatsAppRecipientPhone?: string; // Recipient WhatsApp phone number with country code (e.g. +919876543210)
 
   // ── Status & Security Metadata ─────────────────────────────────────────────
   status: 'Not Configured' | 'Submitted' | 'Configured' | 'Locked & Expired';

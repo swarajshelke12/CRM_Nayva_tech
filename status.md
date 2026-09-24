@@ -81,27 +81,7 @@ src/
     └── common/
         └── HowItWorksModal.tsx # Non-technical client workflow walkthrough
 ```
-│
-├── services/
-│   └── webhookService.ts       # n8n webhook integration (optional live sync)
-│
-└── components/
-    ├── layout/
-    │   ├── Sidebar.tsx         # Navigation sidebar
-    │   └── TopHeader.tsx       # Header with breadcrumbs + status
-    │
-    ├── views/
-    │   ├── DashboardView.tsx   # Executive KPIs + WhatsApp preview
-    │   ├── MeetingsView.tsx    # Calendar table + filters
-    │   ├── MeetingPrepView.tsx # Intelligence dossier cards
-    │   └── ConnectionsView.tsx # Ephemeral credential portal
-    │
-    └── common/
-        ├── HowItWorksModal.tsx # User guide modal
-        ├── Card.tsx            # Reusable card component
-        ├── Badge.tsx           # Status badge component
-        └── Icons.tsx           # Custom SVG icons
-```
+
 
 ### Core Data Models (`src/types/index.ts`)
 

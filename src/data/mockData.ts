@@ -17,6 +17,7 @@ export const initialCredentials: WorkflowCredentials = {
   linkedInCookie: '',
   whatsAppBusinessId: '',
   whatsAppAccessToken: '',
+  whatsAppRecipientPhone: '',
   status: 'Not Configured',
 };
 

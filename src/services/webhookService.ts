@@ -59,48 +59,136 @@ export async function sendCredentialsToWebhook(credentials: WorkflowCredentials)
 }
 
 /**
- * Triggers an instant WhatsApp test dispatch via Meta Business Cloud API.
+ * Triggers an instant WhatsApp test dispatch via Meta Business Cloud API or n8n webhook.
  */
-export async function sendTestWhatsAppDispatch(businessId: string, accessToken: string): Promise<WebhookResponse> {
+export async function sendTestWhatsAppDispatch(
+  phoneNumberId: string,
+  accessToken: string,
+  recipientPhone?: string,
+  messageText?: string
+): Promise<WebhookResponse> {
   const timestamp = new Date().toISOString();
+  const cleanPhoneId = phoneNumberId ? phoneNumberId.replace(/\D/g, '') : '';
+  const cleanRecipient = recipientPhone ? recipientPhone.replace(/\D/g, '') : '';
+  const token = accessToken?.trim() || '';
 
-  if (!WEBHOOK_URL) {
-    await new Promise((res) => setTimeout(res, 800));
+  if (!cleanPhoneId) {
     return {
-      success: true,
-      message: 'Test briefing dispatched to your WhatsApp!',
+      success: false,
+      message: 'WhatsApp Phone Number ID is missing (enter 15-digit ID from Meta Dev Portal).',
       timestamp
     };
   }
 
+  if (!token) {
+    return {
+      success: false,
+      message: 'WhatsApp Access Token is missing (starts with EAA...).',
+      timestamp
+    };
+  }
+
+  // If n8n webhook URL is provided in .env, dispatch via n8n automation engine
+  if (WEBHOOK_URL) {
+    try {
+      const response = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(AUTH_HEADER ? { Authorization: AUTH_HEADER } : {})
+        },
+        body: JSON.stringify({
+          event: 'test_whatsapp_dispatch',
+          phoneNumberId: cleanPhoneId,
+          accessToken: token,
+          recipientPhone: cleanRecipient,
+          message: messageText || '🚀 MeetPrep CRM Test Dispatch: AI Meeting Prep WhatsApp pipeline is active!',
+          timestamp,
+        })
+      });
+
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson?.message || `n8n webhook responded with status ${response.status}`);
+      }
+
+      return {
+        success: true,
+        message: cleanRecipient
+          ? `✓ Briefing dispatched to +${cleanRecipient} via n8n automation engine!`
+          : '✓ Test briefing dispatched via n8n automation engine!',
+        timestamp
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: `n8n Webhook Error: ${err?.message || 'Failed to dispatch via webhook.'}`,
+        timestamp
+      };
+    }
+  }
+
+  // Direct Meta WhatsApp Cloud API call
   try {
-    const response = await fetch(WEBHOOK_URL, {
+    if (!cleanRecipient) {
+      return {
+        success: false,
+        message: 'Recipient WhatsApp phone number is required (e.g. 919876543210 with country code).',
+        timestamp
+      };
+    }
+
+    const payload = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: cleanRecipient,
+      type: 'text',
+      text: {
+        body: messageText || '🚀 *MeetPrep CRM Intelligence Briefing*\n\nYour AI-powered executive meeting preparation pipeline is verified and connected to WhatsApp Cloud API.'
+      }
+    };
+
+    const response = await fetch(`https://graph.facebook.com/v21.0/${cleanPhoneId}/messages`, {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
-        ...(AUTH_HEADER ? { Authorization: AUTH_HEADER } : {})
       },
-      body: JSON.stringify({
-        event: 'test_whatsapp_dispatch',
-        businessId,
-        accessToken,
-        timestamp,
-      })
+      body: JSON.stringify(payload)
     });
 
-    if (!response.ok) {
-      throw new Error(`Meta Cloud API responded with status ${response.status}`);
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok || result?.error) {
+      const metaErr = result?.error;
+      let errorDetail = metaErr?.message || `Meta Cloud API responded with status ${response.status}`;
+      
+      if (metaErr?.code === 190) {
+        errorDetail = 'Meta Access Token has expired or is invalid. Please generate a new token in Meta Business Manager.';
+      } else if (metaErr?.code === 100) {
+        errorDetail = `Invalid Phone Number ID (${cleanPhoneId}). In Meta Developers, copy the "Phone number ID" under WhatsApp > API Setup.`;
+      } else if (metaErr?.code === 131030) {
+        errorDetail = `Recipient +${cleanRecipient} has not been added to Meta Test Numbers. In Meta Dev Portal, add this phone under "To" test recipients.`;
+      } else if (metaErr?.error_data?.details) {
+        errorDetail = `${metaErr.message} — ${metaErr.error_data.details}`;
+      }
+
+      return {
+        success: false,
+        message: `Meta API: ${errorDetail}`,
+        timestamp
+      };
     }
 
     return {
       success: true,
-      message: 'Test message delivered to WhatsApp via Meta Cloud API.',
+      message: `✓ Briefing successfully delivered to WhatsApp (+${cleanRecipient}) via Meta Cloud API!`,
       timestamp
     };
   } catch (err: any) {
     return {
       success: false,
-      message: `Dispatch error: ${err?.message || 'Check your WhatsApp Access Token'}`,
+      message: `WhatsApp Dispatch Error: ${err?.message || 'Check your internet connection.'}`,
       timestamp
     };
   }

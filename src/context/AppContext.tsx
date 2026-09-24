@@ -70,7 +70,12 @@ interface AppContextType {
   dismissCompletedSetupNotice: () => void;
   isSyncing: boolean;
   syncCalendar: () => Promise<void>;
-  testWhatsAppAlert: (recipientPhoneOverride?: string, messageOverride?: string) => Promise<WebhookResponse>;
+  testWhatsAppAlert: (
+    recipientPhoneOverride?: string,
+    messageOverride?: string,
+    phoneIdOverride?: string,
+    tokenOverride?: string
+  ) => Promise<WebhookResponse>;
   toast: ToastNotification | null;
   showToast: (message: string, type?: 'success' | 'info' | 'error') => void;
   dismissToast: () => void;

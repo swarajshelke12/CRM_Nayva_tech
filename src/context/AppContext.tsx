@@ -43,9 +43,7 @@ interface AppContextType {
   meetings: Meeting[];
   credentials: WorkflowCredentials;
   updateCredentials: (updates: Partial<WorkflowCredentials>) => Promise<void>;
-  simulateLockExpiry: () => void;
   resetForNewCredentials: () => void;
-  deleteCredentials: () => void;
   viewMeetingPrep: (meetingId: string) => void;
   workflowStatus: WorkflowStatus;
   isGuideOpen: boolean;
@@ -190,28 +188,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return res;
   };
 
-  const simulateLockExpiry = () => {
-    const expiredTimestamp = Date.now() - 1000;
-    const expiredCreds: WorkflowCredentials = {
-      googleClientId: '',
-      googleClientSecret: '',
-      openAiApiKey: '',
-      apifyApiKey: '',
-      linkedInCookie: '',
-      whatsAppBusinessId: '',
-      whatsAppAccessToken: '',
-      status: 'Locked & Expired',
-      lastSubmitted: credentials.lastSubmitted,
-      submittedAtTimestamp: credentials.submittedAtTimestamp ?? (Date.now() - LOCK_DURATION_MS - 5000),
-      expiresAtTimestamp: expiredTimestamp,
-    };
-    setCredentials(expiredCreds);
-    try {
-      localStorage.setItem('meetprep_credentials', JSON.stringify(expiredCreds));
-    } catch {}
-    showToast('Simulated 12h session expiry: keys purged.', 'info');
-  };
-
   const resetForNewCredentials = () => {
     const blankCreds: WorkflowCredentials = {
       googleClientId: '',
@@ -231,24 +207,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast('Credentials cleared for re-entry.', 'info');
   };
 
-  const deleteCredentials = () => {
-    const blankCreds: WorkflowCredentials = {
-      googleClientId: '',
-      googleClientSecret: '',
-      openAiApiKey: '',
-      apifyApiKey: '',
-      linkedInCookie: '',
-      whatsAppBusinessId: '',
-      whatsAppAccessToken: '',
-      status: 'Not Configured',
-    };
-    setCredentials(blankCreds);
-    setMeetings([]);
-    try {
-      localStorage.removeItem('meetprep_credentials');
-    } catch {}
-  };
-
   const viewMeetingPrep = (meetingId: string) => {
     setSelectedMeetingId(meetingId);
     setCurrentScreen('preparation');
@@ -264,9 +222,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         meetings,
         credentials,
         updateCredentials,
-        simulateLockExpiry,
         resetForNewCredentials,
-        deleteCredentials,
         viewMeetingPrep,
         workflowStatus,
         isGuideOpen,

@@ -93,27 +93,14 @@ export const ConnectionsView: React.FC = () => {
     testWhatsAppAlert
   } = useApp();
 
-  const [googleClientId, setGoogleClientId] = useState(credentials.googleClientId);
-  const [googleClientSecret, setGoogleClientSecret] = useState(credentials.googleClientSecret);
-  const [openAiApiKey, setOpenAiApiKey] = useState(credentials.openAiApiKey);
-  const [apifyApiKey, setApifyApiKey] = useState(credentials.apifyApiKey);
-  const [linkedInCookie, setLinkedInCookie] = useState(credentials.linkedInCookie || '');
-  const [whatsAppBusinessId, setWhatsAppBusinessId] = useState(credentials.whatsAppBusinessId);
-  const [whatsAppAccessToken, setWhatsAppAccessToken] = useState(credentials.whatsAppAccessToken);
-
+  const [form, setForm] = useState(credentials);
   const [remainingMs, setRemainingMs] = useState<number>(0);
   const [showAdvancedHelp, setShowAdvancedHelp] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isTestingWhatsApp, setIsTestingWhatsApp] = useState(false);
 
   useEffect(() => {
-    setGoogleClientId(credentials.googleClientId);
-    setGoogleClientSecret(credentials.googleClientSecret);
-    setOpenAiApiKey(credentials.openAiApiKey);
-    setApifyApiKey(credentials.apifyApiKey);
-    setLinkedInCookie(credentials.linkedInCookie || '');
-    setWhatsAppBusinessId(credentials.whatsAppBusinessId);
-    setWhatsAppAccessToken(credentials.whatsAppAccessToken);
+    setForm(credentials);
   }, [credentials]);
 
   useEffect(() => {
@@ -130,6 +117,10 @@ export const ConnectionsView: React.FC = () => {
     return () => clearInterval(interval);
   }, [credentials.expiresAtTimestamp]);
 
+  const setField = (field: keyof typeof form, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
   const isLocked =
     credentials.status === 'Locked & Expired' ||
     (credentials.expiresAtTimestamp ? Date.now() >= credentials.expiresAtTimestamp : false);
@@ -138,26 +129,16 @@ export const ConnectionsView: React.FC = () => {
     (credentials.status === 'Submitted' || credentials.status === 'Configured') && !isLocked;
 
   const countFilled = [
-    googleClientId && googleClientSecret,
-    openAiApiKey,
-    apifyApiKey,
-    whatsAppBusinessId && whatsAppAccessToken
+    form.googleClientId && form.googleClientSecret,
+    form.openAiApiKey,
+    form.apifyApiKey,
+    form.whatsAppBusinessId && form.whatsAppAccessToken
   ].filter(Boolean).length;
 
-  // Save everything, forward to production n8n engine, and immediately continue to dashboard
   const handleSaveAndContinue = async () => {
     setIsSaving(true);
-    await updateCredentials({
-      googleClientId,
-      googleClientSecret,
-      openAiApiKey,
-      apifyApiKey,
-      linkedInCookie,
-      whatsAppBusinessId,
-      whatsAppAccessToken,
-    });
+    await updateCredentials(form);
     setIsSaving(false);
-    // Continue immediately!
     setCurrentScreen('dashboard');
   };
 
@@ -232,7 +213,7 @@ export const ConnectionsView: React.FC = () => {
                 <p className="text-[11px] text-zinc-500">Reads upcoming invites &amp; email threads</p>
               </div>
             </div>
-            {googleClientId && googleClientSecret ? (
+            {form.googleClientId && form.googleClientSecret ? (
               <span className="w-2 h-2 rounded-full bg-emerald-400" title="Configured" />
             ) : (
               <span className="text-[10px] text-amber-400 font-medium">Pending</span>
@@ -241,14 +222,14 @@ export const ConnectionsView: React.FC = () => {
 
           <SimpleField
             label="Client ID"
-            value={googleClientId}
-            onChange={setGoogleClientId}
+            value={form.googleClientId}
+            onChange={(val) => setField('googleClientId', val)}
             placeholder="xxxxxx.apps.googleusercontent.com"
           />
           <SimpleField
             label="Client Secret"
-            value={googleClientSecret}
-            onChange={setGoogleClientSecret}
+            value={form.googleClientSecret}
+            onChange={(val) => setField('googleClientSecret', val)}
             placeholder="GOCSPX-xxxxxx"
           />
         </div>
@@ -265,7 +246,7 @@ export const ConnectionsView: React.FC = () => {
                 <p className="text-[11px] text-zinc-500">Synthesizes dossiers &amp; talking points</p>
               </div>
             </div>
-            {openAiApiKey ? (
+            {form.openAiApiKey ? (
               <span className="w-2 h-2 rounded-full bg-emerald-400" title="Configured" />
             ) : (
               <span className="text-[10px] text-amber-400 font-medium">Pending</span>
@@ -274,8 +255,8 @@ export const ConnectionsView: React.FC = () => {
 
           <SimpleField
             label="OpenAI API Key"
-            value={openAiApiKey}
-            onChange={setOpenAiApiKey}
+            value={form.openAiApiKey}
+            onChange={(val) => setField('openAiApiKey', val)}
             placeholder="sk-proj-xxxxxxxxxxxx"
             hint="Private key"
           />
@@ -296,7 +277,7 @@ export const ConnectionsView: React.FC = () => {
                 <p className="text-[11px] text-zinc-500">Pulls attendee career &amp; company background</p>
               </div>
             </div>
-            {apifyApiKey ? (
+            {form.apifyApiKey ? (
               <span className="w-2 h-2 rounded-full bg-emerald-400" title="Configured" />
             ) : (
               <span className="text-[10px] text-amber-400 font-medium">Pending</span>
@@ -305,14 +286,14 @@ export const ConnectionsView: React.FC = () => {
 
           <SimpleField
             label="Apify API Key"
-            value={apifyApiKey}
-            onChange={setApifyApiKey}
+            value={form.apifyApiKey}
+            onChange={(val) => setField('apifyApiKey', val)}
             placeholder="apify_api_xxxxxxxxxxxx"
           />
           <SimpleField
             label="LinkedIn Cookie (Optional)"
-            value={linkedInCookie}
-            onChange={setLinkedInCookie}
+            value={form.linkedInCookie || ''}
+            onChange={(val) => setField('linkedInCookie', val)}
             placeholder="li_at=AQEDAT..."
             hint="For deep profile context"
           />
@@ -330,7 +311,7 @@ export const ConnectionsView: React.FC = () => {
                 <p className="text-[11px] text-zinc-500">Delivers briefings 60m before every call</p>
               </div>
             </div>
-            {whatsAppBusinessId && whatsAppAccessToken ? (
+            {form.whatsAppBusinessId && form.whatsAppAccessToken ? (
               <span className="w-2 h-2 rounded-full bg-emerald-400" title="Configured" />
             ) : (
               <span className="text-[10px] text-amber-400 font-medium">Pending</span>
@@ -339,19 +320,19 @@ export const ConnectionsView: React.FC = () => {
 
           <SimpleField
             label="WhatsApp Business ID"
-            value={whatsAppBusinessId}
-            onChange={setWhatsAppBusinessId}
+            value={form.whatsAppBusinessId}
+            onChange={(val) => setField('whatsAppBusinessId', val)}
             placeholder="15-digit Meta Business ID"
             isPassword={false}
           />
           <SimpleField
             label="WhatsApp Access Token"
-            value={whatsAppAccessToken}
-            onChange={setWhatsAppAccessToken}
+            value={form.whatsAppAccessToken}
+            onChange={(val) => setField('whatsAppAccessToken', val)}
             placeholder="EAAxxxxxxxxxxxxxxxxxxxx"
           />
 
-          {whatsAppBusinessId && whatsAppAccessToken && (
+          {form.whatsAppBusinessId && form.whatsAppAccessToken && (
             <button
               type="button"
               onClick={handleTestWhatsApp}

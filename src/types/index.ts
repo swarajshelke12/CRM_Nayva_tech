@@ -61,30 +61,10 @@ export interface WorkflowCredentials {
   expiresAtTimestamp?: number;    // Epoch ms timestamp when 12h lock triggers
 }
 
-// ─── Workflow Monitoring (mock data only — no live backend connection yet) ────
-
-export type WorkflowRunStatus = 'success' | 'failed' | 'running';
-
-export interface WorkflowRun {
-  id: string;
-  timestamp: string;
-  triggerReason: string;
-  status: WorkflowRunStatus;
-  durationSeconds: number;
-  attendeeName?: string;
-  errorMessage?: string;
-}
-
 export interface WorkflowStatus {
   name: string;
   isActive: boolean;
-  triggerSchedule: string;        // e.g. "Every 1 hour"
+  triggerSchedule: string;
   lastRunAt: string;
   nextRunAt: string;
-  totalRunsLast30Days: number;
-  successfulRuns: number;
-  failedRuns: number;
-  avgDurationSeconds: number;
-  recentRuns: WorkflowRun[];
-  credentialIssues: string[];
 }

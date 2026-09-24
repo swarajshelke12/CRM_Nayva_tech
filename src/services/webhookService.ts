@@ -143,7 +143,7 @@ export async function triggerMeetingSync(): Promise<WebhookResponse> {
       message: 'Google Calendar synchronized via n8n background engine.',
       timestamp
     };
-  } catch (err: any) {
+  } catch {
     return {
       success: true,
       message: 'Calendar verified. All scheduled meetings loaded.',

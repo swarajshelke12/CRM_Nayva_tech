@@ -29,10 +29,4 @@ export const mockWorkflowStatus: WorkflowStatus = {
   triggerSchedule: 'Every 1 hour (Schedule Trigger)',
   lastRunAt: '—',
   nextRunAt: '—',
-  totalRunsLast30Days: 0,
-  successfulRuns: 0,
-  failedRuns: 0,
-  avgDurationSeconds: 0,
-  credentialIssues: [],
-  recentRuns: [],
 };
